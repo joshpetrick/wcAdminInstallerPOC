@@ -183,7 +183,7 @@ If a stage fails, keep the VM and logs in place and run the resume command print
 
 ### Step 8: Clean a failed or unwanted build
 
-Cleanup requires confirmation unless `-Force` is supplied:
+Cleanup requires confirmation unless `-Force` is supplied. Use the build directory printed by the failed launcher. Do not include a trailing backslash before the closing quote.
 
 ```powershell
 .\Clean-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<build-folder>"
@@ -194,6 +194,8 @@ For noninteractive cleanup:
 ```powershell
 .\Clean-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<build-folder>" -Force
 ```
+
+The cleanup script now handles incomplete build folders: if no `Vagrantfile` exists it skips `vagrant destroy` and removes the failed build directory only.
 
 ### Step 9: Collect successful output
 

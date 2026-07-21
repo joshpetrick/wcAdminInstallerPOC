@@ -98,6 +98,18 @@ Describe 'Package generation path handling' {
     $launcher | Should -Not -Match 'Join-Path \$PSScriptRoot.*\*'
   }
 
+  It 'cleanup prompt braces BuildDirectory variable before question mark under strict mode' {
+    $cleanup = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Clean-Foundation-Build.ps1')
+    $cleanup | Should -Match '\$\{resolvedBuildDirectory\}\? Type YES'
+    $cleanup | Should -Not -Match '\$BuildDirectory\?'
+  }
+
+  It 'cleanup can remove incomplete build directories without a Vagrantfile' {
+    $cleanup = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Clean-Foundation-Build.ps1')
+    $cleanup | Should -Match 'No Vagrantfile was found'
+    $cleanup | Should -Match 'Skipping vagrant destroy'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
