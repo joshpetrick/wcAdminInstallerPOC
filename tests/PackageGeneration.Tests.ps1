@@ -217,6 +217,9 @@ Describe 'Package generation path handling' {
     $createDatabase | Should -Match 'timeout --kill-after=5m'
     $createDatabase | Should -Match 'DBCA is still running'
     $createDatabase | Should -Match 'DBCA exceeded the configured'
+    $createDatabase | Should -Match 'DBCA completed with warnings'
+    $createDatabase | Should -Match 'verify_database_open'
+    $createDatabase | Should -Match 'OPEN_MODE='
     $createDatabase | Should -Match 'dump_dbca_logs'
   }
 

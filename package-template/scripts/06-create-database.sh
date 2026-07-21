@@ -42,10 +42,28 @@ main(){
     echo "DBCA exceeded the configured ${timeout_minutes}-minute timeout. Increase profile.oracle.databaseCreationTimeoutMinutes only if the DBCA logs show active progress."
     dump_dbca_logs
     exit "$dbca_rc"
+  elif [[ $dbca_rc -eq 6 ]]; then
+    echo "DBCA completed with warnings (exit code 6). Verifying that the database is open before continuing."
+    dump_dbca_logs
+    verify_database_open "$oracle_user"
   elif [[ $dbca_rc -ne 0 ]]; then
     echo "DBCA failed with exit code $dbca_rc."
     dump_dbca_logs
     exit "$dbca_rc"
   fi
+}
+verify_database_open(){
+  local oracle_user="$1"
+  runuser -u "$oracle_user" -- bash -lc "export ORACLE_BASE='$ORACLE_BASE' ORACLE_HOME='$ORACLE_HOME' ORACLE_SID='$ORACLE_SID' PATH='$ORACLE_HOME/bin':\$PATH; sqlplus -s / as sysdba <<'SQL'
+set heading off feedback off pagesize 0 verify off echo off
+whenever sqlerror continue
+startup
+alter database open
+alter pluggable database all open
+alter pluggable database all save state
+whenever sqlerror exit failure
+select 'OPEN_MODE=' || open_mode from v\$database where open_mode = 'READ WRITE';
+exit success
+SQL"
 }
 stage_run "06-create-database" main
