@@ -1,23 +1,20 @@
 require 'json'
 cfg = JSON.parse(File.read(File.join(__dir__, 'config.json')))['profile']
 
-data_disk_path = File.join(Dir.pwd, 'primary-disk.vdi')
-data_controller = 'Windchill Foundation Data'
+disk_size = "#{cfg['vm']['primaryDiskGb']}GB"
 
 Vagrant.configure('2') do |config|
   config.vm.box = cfg['baseOperatingSystem']['vagrantBox']
   config.vm.box_version = cfg['baseOperatingSystem']['vagrantBoxVersion'] unless cfg['baseOperatingSystem']['vagrantBoxVersion'].to_s.empty?
   config.vm.hostname = cfg['vm']['hostname']
   config.vm.boot_timeout = 1800
+  # Use Vagrant's VirtualBox disk support to resize the primary disk instead of assuming any base-box storage-controller name.
+  config.vm.disk :disk, size: disk_size, primary: true
   config.vm.provider 'virtualbox' do |vb|
     vb.name = cfg['vm']['name']
     vb.cpus = cfg['vm']['cpus']
     vb.memory = cfg['vm']['memoryMb']
     vb.gui = !cfg['vm']['headless']
-    vb.customize ['createhd', '--filename', data_disk_path, '--size', cfg['vm']['primaryDiskGb'].to_i * 1024, '--format', 'VDI'] unless File.exist?(data_disk_path)
-    # Do not assume the base box controller is named "SATA Controller". Create a dedicated controller for the POC data disk.
-    vb.customize ['storagectl', :id, '--name', data_controller, '--add', 'sata', '--controller', 'IntelAhci', '--portcount', '2']
-    vb.customize ['storageattach', :id, '--storagectl', data_controller, '--port', '0', '--device', '0', '--type', 'hdd', '--medium', data_disk_path]
   end
   config.vm.synced_folder '.', '/vagrant', type: 'virtualbox', SharedFoldersEnableSymlinksCreate: false
   ['01-prepare-linux','02-install-java','03-prepare-oracle','04-install-oracle','05-configure-listener','06-create-database','07-configure-services','08-validate-foundation','09-sanitize-foundation'].each do |s|

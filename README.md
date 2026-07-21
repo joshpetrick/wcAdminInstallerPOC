@@ -240,7 +240,7 @@ The launcher copies the generated package into an isolated build directory under
 
 ### VirtualBox says it could not find `SATA Controller`
 
-Older generated packages assumed the AlmaLinux base box had a storage controller named `SATA Controller`. Some base-box versions use a different controller name, which causes `VBoxManage storageattach` to fail before boot. Regenerate the Admin package after this fix so the generated `Vagrantfile` creates a dedicated `Windchill Foundation Data` SATA controller for the POC data disk instead of depending on a base-box controller name.
+Older generated packages attempted to add or attach a second VirtualBox SATA controller. Some AlmaLinux base-box versions already have the maximum number of SATA controllers, or use a controller name that differs from earlier assumptions, which causes `VBoxManage storagectl` or `storageattach` to fail before boot. Regenerate the Admin package after this fix so the generated `Vagrantfile` uses Vagrant VirtualBox disk support to resize the primary disk to the configured size instead of depending on any base-box storage-controller name.
 
 Recommended recovery after seeing this error:
 

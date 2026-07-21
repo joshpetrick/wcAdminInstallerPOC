@@ -84,11 +84,10 @@ Describe 'Package generation path handling' {
     Test-Path -LiteralPath (Join-Path $extract 'Vagrantfile.template') | Should -BeFalse
   }
 
-  It 'Vagrantfile creates a dedicated data disk controller instead of assuming the base box SATA Controller name' {
+  It 'Vagrantfile resizes the primary disk without storage controller customizations' {
     $vagrantfile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Vagrantfile.template')
-    $vagrantfile | Should -Match 'Windchill Foundation Data'
-    $vagrantfile | Should -Match "'storagectl'"
-    $vagrantfile | Should -Not -Match "--storagectl','SATA Controller'|--storagectl', 'SATA Controller'"
+    $vagrantfile | Should -Match 'config.vm.disk :disk, size: disk_size, primary: true'
+    $vagrantfile | Should -Not -Match "'storagectl'|'storageattach'|SATA Controller|Windchill Foundation Data"
   }
 
   It 'runtime launcher copies package contents without wildcard LiteralPath and validates Vagrantfile before vagrant up' {
