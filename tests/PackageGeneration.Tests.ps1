@@ -84,6 +84,13 @@ Describe 'Package generation path handling' {
     Test-Path -LiteralPath (Join-Path $extract 'Vagrantfile.template') | Should -BeFalse
   }
 
+  It 'runtime launcher copies package contents without wildcard LiteralPath and validates Vagrantfile before vagrant up' {
+    $launcher = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Start-Foundation-Build.ps1')
+    $launcher | Should -Match 'Get-ChildItem -LiteralPath \$SourceDirectory'
+    $launcher | Should -Match 'Assert-FileExists .*Vagrantfile'
+    $launcher | Should -Not -Match 'Join-Path \$PSScriptRoot.*\*'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force

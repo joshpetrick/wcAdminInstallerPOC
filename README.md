@@ -217,6 +217,24 @@ A completed integration run produces `wc-12.1.2-foundation-virtualbox-0.1.0.box`
 
 Failures stop at the first stage, preserve VMs/logs/markers, and print resume and cleanup commands. Logs are redacted where scripts control output. Do not commit Oracle binaries, generated VM images, response files, logs, or passwords. The `.gitignore` file enforces public-repository protections and does not make Git a runtime dependency.
 
+
+### Vagrant says no environment or target machine is required
+
+If Vagrant prints this message:
+
+```text
+A Vagrant environment or target machine is required to run this command.
+```
+
+it means `vagrant up` was executed from a folder that does not contain a `Vagrantfile`. You do not need to run `vagrant init`. Run `Start-Foundation-Build.ps1` from the generated package directory, for example:
+
+```powershell
+cd .\output\wc-12.1.2-foundation-build-0.1.0
+.\Start-Foundation-Build.ps1
+```
+
+The launcher copies the generated package into an isolated build directory under `C:\WindchillFoundationPOC\Builds` and verifies that `Vagrantfile` is present before running `vagrant up`. If this fails, inspect the `build.log` path printed in the error message and verify that the generated package contains `Vagrantfile` and `config.json`.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.
