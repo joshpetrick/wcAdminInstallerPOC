@@ -265,6 +265,13 @@ cd .\output\wc-12.1.2-foundation-build-0.1.0
 
 This usually means a Linux shell script reached the guest with Windows CRLF line endings. Regenerate the Admin package after this fix; the generator normalizes all generated `*.sh` files to Unix LF before creating the ZIP. If you already have a failed build directory, clean it, regenerate the package, and start from the new generated package directory.
 
+
+### Stage `01-prepare-linux` fails without details in Vagrant output
+
+The provisioning wrapper now streams each stage command to both the console and `/var/lib/windchill-foundation/logs/<stage>.log`, and prints the last 80 log lines when a stage fails. Older generated packages redirected stage output only to the guest log, which made Vagrant show only a generic non-zero exit message.
+
+For AlmaLinux, the Oracle Linux convenience package `oracle-database-preinstall-19c` may not be available from enabled repositories. Stage 01 now falls back to explicit Oracle 19c prerequisite packages and creates the Oracle user/groups directly when that package is unavailable.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.

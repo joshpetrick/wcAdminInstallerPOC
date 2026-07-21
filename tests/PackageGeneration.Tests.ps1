@@ -116,6 +116,15 @@ Describe 'Package generation path handling' {
     $generatorText | Should -Match 'WriteAllText'
   }
 
+  It 'stage wrapper streams failures to console and prepare-linux has AlmaLinux prerequisite fallback' {
+    $common = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/common.sh')
+    $prepare = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/01-prepare-linux.sh')
+    $common | Should -Match 'tee -a "\$log"'
+    $common | Should -Match 'Last 80 log lines'
+    $prepare | Should -Match 'oracle-database-preinstall-19c was not available'
+    $prepare | Should -Match 'groupadd -f'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
