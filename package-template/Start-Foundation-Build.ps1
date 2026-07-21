@@ -43,7 +43,20 @@ try {
   & vagrant package --output "wc-12.1.2-foundation-virtualbox-$($p.artifactVersion).box"
   Write-Host 'Build completed; run packaged-box validation before publication.'
 } catch {
-  Write-Error "$($_.Exception.Message). Primary log: '$log'. Resume: pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '$work'. Cleanup: pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '$work'"
+  $message = @(
+    $($_.Exception.Message),
+    '',
+    'Log command:',
+    "Get-Content -Path '$log' -Tail 200",
+    '',
+    'Resume command:',
+    "pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '$work'",
+    '',
+    'Cleanup command:',
+    "pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '$work'",
+    ''
+  ) -join [Environment]::NewLine
+  Write-Error $message
   exit 1
 } finally {
   Pop-Location

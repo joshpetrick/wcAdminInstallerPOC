@@ -277,6 +277,11 @@ For AlmaLinux, the Oracle Linux convenience package `oracle-database-preinstall-
 
 Windows host paths such as `C:\WindchillFoundationPOC\Media\Oracle` do not exist inside the AlmaLinux guest. The generated `Vagrantfile` now validates the configured Oracle installer path on the Windows host and uses Vagrant's file provisioner to copy only that ZIP into `/tmp/windchill-foundation-oracle-media/` inside the guest before stage `03-prepare-oracle` runs. The ZIP is then copied to guest-local installer staging and checksum-validated. Oracle media is still not included in the generated Admin ZIP or source repository.
 
+
+### Oracle media upload fails with SCP permissions error
+
+The Oracle media file provisioner copies the ZIP as the Vagrant SSH user. The guest staging directory is intentionally created under `/tmp/windchill-foundation-oracle-media` with relaxed write permissions for this local development-image POC so the upload can succeed. The ZIP is still copied only from the configured host media path, checksum-validated in the guest, and removed during sanitization.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.

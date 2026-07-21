@@ -134,6 +134,20 @@ Describe 'Package generation path handling' {
     $prepareOracle | Should -Not -Match 'C:\\WindchillFoundationPOC'
   }
 
+  It 'Oracle media staging directory is writable by Vagrant file provisioner' {
+    $vagrantfile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Vagrantfile.template')
+    $vagrantfile | Should -Match 'chmod 0777 #\{oracle_guest_media_dir\}'
+    $vagrantfile | Should -Match "config.vm.provision 'file'"
+  }
+
+  It 'launcher failure output prints log resume and cleanup commands on separate lines' {
+    $launcher = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Start-Foundation-Build.ps1')
+    $launcher | Should -Match 'Log command:'
+    $launcher | Should -Match 'Resume command:'
+    $launcher | Should -Match 'Cleanup command:'
+    $launcher | Should -Match '\[Environment\]::NewLine'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
