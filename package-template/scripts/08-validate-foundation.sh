@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+source /vagrant/scripts/common.sh
+main(){ oracle_env; checks=(); status=PASS; add(){ checks+=("{\"name\":\"$1\",\"status\":\"$2\"}"); [[ "$2" == PASS ]] || status=FAIL; }; hostname | grep -q "$(json '.profile.vm.hostname')" && add hostname PASS || add hostname FAIL; java -version && javac -version && add java PASS || add java FAIL; [[ -x "$ORACLE_HOME/bin/sqlplus" ]] && add sqlplus PASS || add sqlplus FAIL; su - oracle -c "lsnrctl status" && add listener PASS || add listener FAIL; printf '{"status":"%s","startedAt":"%s","finishedAt":"%s","checks":[%s]}\n' "$status" "$(date -Is)" "$(date -Is)" "$(IFS=,; echo "${checks[*]}")" >$VALIDATION/validation-report.json; jq -r '.checks[]|"\(.status) \(.name)"' $VALIDATION/validation-report.json >$VALIDATION/validation-report.txt; [[ "$status" == PASS ]]; }
+stage_run "08-validate-foundation" main
