@@ -2,6 +2,26 @@
 source /vagrant/scripts/common.sh
 main(){
   oracle_env
+  cat >/usr/local/bin/windchill-listener-start.sh <<EOS
+#!/usr/bin/env bash
+set -euo pipefail
+export ORACLE_HOME="$ORACLE_HOME"
+export PATH="\$ORACLE_HOME/bin:\$PATH"
+if "\$ORACLE_HOME/bin/lsnrctl" status >/dev/null 2>&1; then
+  echo "Oracle listener is already running; leaving it in place."
+  exit 0
+fi
+"\$ORACLE_HOME/bin/lsnrctl" start
+EOS
+  cat >/usr/local/bin/windchill-listener-stop.sh <<EOS
+#!/usr/bin/env bash
+set -euo pipefail
+export ORACLE_HOME="$ORACLE_HOME"
+export PATH="\$ORACLE_HOME/bin:\$PATH"
+if "\$ORACLE_HOME/bin/lsnrctl" status >/dev/null 2>&1; then
+  "\$ORACLE_HOME/bin/lsnrctl" stop
+fi
+EOS
   cat >/usr/local/bin/windchill-oracle-start.sh <<EOS
 #!/usr/bin/env bash
 set -euo pipefail
@@ -30,20 +50,21 @@ export ORACLE_SID="$ORACLE_SID"
 export PATH="\$ORACLE_HOME/bin:\$PATH"
 echo "shutdown immediate" | "\$ORACLE_HOME/bin/sqlplus" / as sysdba
 EOS
-  chmod 0755 /usr/local/bin/windchill-oracle-start.sh /usr/local/bin/windchill-oracle-stop.sh
-  chown "$(json '.profile.oracle.user'):$(json '.profile.oracle.inventoryGroup')" /usr/local/bin/windchill-oracle-start.sh /usr/local/bin/windchill-oracle-stop.sh
+  chmod 0755 /usr/local/bin/windchill-listener-start.sh /usr/local/bin/windchill-listener-stop.sh /usr/local/bin/windchill-oracle-start.sh /usr/local/bin/windchill-oracle-stop.sh
+  chown "$(json '.profile.oracle.user'):$(json '.profile.oracle.inventoryGroup')" /usr/local/bin/windchill-listener-start.sh /usr/local/bin/windchill-listener-stop.sh /usr/local/bin/windchill-oracle-start.sh /usr/local/bin/windchill-oracle-stop.sh
   cat >/etc/systemd/system/oracle-listener.service <<EOS
 [Unit]
 Description=Oracle Listener
 After=network.target
 [Service]
-Type=forking
+Type=oneshot
+RemainAfterExit=yes
 User=oracle
 Environment=ORACLE_HOME=$ORACLE_HOME
 TimeoutStartSec=300
 TimeoutStopSec=300
-ExecStart=$ORACLE_HOME/bin/lsnrctl start
-ExecStop=$ORACLE_HOME/bin/lsnrctl stop
+ExecStart=/usr/local/bin/windchill-listener-start.sh
+ExecStop=/usr/local/bin/windchill-listener-stop.sh
 [Install]
 WantedBy=multi-user.target
 EOS
@@ -52,7 +73,8 @@ EOS
 Description=Oracle Database
 After=oracle-listener.service
 [Service]
-Type=forking
+Type=oneshot
+RemainAfterExit=yes
 User=oracle
 Environment=ORACLE_HOME=$ORACLE_HOME ORACLE_SID=$ORACLE_SID
 TimeoutStartSec=900

@@ -199,6 +199,10 @@ Describe 'Package generation path handling' {
     $listener | Should -Match "PATH='\$ORACLE_HOME/bin'"
     $validate | Should -Match 'runuser -u "\$oracle_user"'
     $validate | Should -Match "PATH='\$ORACLE_HOME/bin'"
+    $services | Should -Match 'windchill-listener-start.sh'
+    $services | Should -Match 'Oracle listener is already running'
+    $services | Should -Match 'Type=oneshot'
+    $services | Should -Match 'RemainAfterExit=yes'
     $services | Should -Match 'windchill-oracle-start.sh'
     $services | Should -Match 'select status from v'
     $services | Should -Match 'instance'

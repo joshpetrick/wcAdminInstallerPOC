@@ -313,7 +313,7 @@ Stage `01-prepare-linux` now maps the configured VM hostname to the guest's prim
 
 ### Stage `07-configure-services` times out after DBCA already created the database
 
-DBCA leaves the new database running at the end of stage `06-create-database`, so stage `07-configure-services` now installs idempotent start/stop helper scripts. The start helper checks `v$instance` and starts the instance only when it is not already open, then opens and saves all PDB state. The systemd startup timeout is extended for the database service to accommodate first-boot CDB/PDB startup on slower developer hosts without changing CPU or memory defaults.
+DBCA leaves the new database running at the end of stage `06-create-database`, and stage `05-configure-listener` already starts the listener. Stage `07-configure-services` now installs idempotent listener and database start/stop helper scripts, then registers them as `oneshot` systemd units with `RemainAfterExit=yes`. The listener helper treats an already-running listener as success, and the database start helper checks `v$instance` and starts the instance only when it is not already open, then opens and saves all PDB state. The systemd startup timeout is extended for the database service to accommodate first-boot CDB/PDB startup on slower developer hosts without changing CPU or memory defaults. The `ΓåÆ` characters sometimes shown in Vagrant output are the Windows console rendering of systemd's symlink arrow and are not written into the service files.
 
 ## Compatibility and future mapping
 
