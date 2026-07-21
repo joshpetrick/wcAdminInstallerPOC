@@ -209,6 +209,17 @@ Describe 'Package generation path handling' {
     $services | Should -Match 'TimeoutStartSec=900'
   }
 
+  It 'Oracle database creation is bounded and emits heartbeat diagnostics' {
+    $profile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'profiles/windchill-12.1.2.json') | ConvertFrom-Json
+    $createDatabase = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/06-create-database.sh')
+    $profile.oracle.databaseCreationTimeoutMinutes | Should -Be 90
+    $profile.oracle.databaseCreationHeartbeatSeconds | Should -Be 120
+    $createDatabase | Should -Match 'timeout --kill-after=5m'
+    $createDatabase | Should -Match 'DBCA is still running'
+    $createDatabase | Should -Match 'DBCA exceeded the configured'
+    $createDatabase | Should -Match 'dump_dbca_logs'
+  }
+
   It 'Oracle install treats runInstaller exit code 6 as success with warnings' {
     $installOracle = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/04-install-oracle.sh')
     $installOracle | Should -Match 'installer_rc'

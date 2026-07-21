@@ -313,6 +313,8 @@ Stage `01-prepare-linux` now maps the configured VM hostname to the guest's prim
 
 ### Stage `07-configure-services` times out after DBCA already created the database
 
+Stage `06-create-database` can legitimately spend a while at `Creating Pluggable Databases`, but it should not be silent for hours. The stage now runs DBCA with `profile.oracle.databaseCreationTimeoutMinutes` (default `90`) and prints heartbeat lines every `profile.oracle.databaseCreationHeartbeatSeconds` (default `120`) while DBCA is still running. If DBCA times out or exits non-zero, the stage prints recent DBCA logs before failing so the next retry has actionable details instead of appearing hung.
+
 DBCA leaves the new database running at the end of stage `06-create-database`, and stage `05-configure-listener` already starts the listener. Stage `07-configure-services` now installs idempotent listener and database start/stop helper scripts, then registers them as `oneshot` systemd units with `RemainAfterExit=yes`. The listener helper treats an already-running listener as success, and the database start helper checks `v$instance` and starts the instance only when it is not already open, then opens and saves all PDB state. The systemd startup timeout is extended for the database service to accommodate first-boot CDB/PDB startup on slower developer hosts without changing CPU or memory defaults. The `ΓåÆ` characters sometimes shown in Vagrant output are the Windows console rendering of systemd's symlink arrow and are not written into the service files.
 
 ## Compatibility and future mapping
