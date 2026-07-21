@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 source /vagrant/scripts/common.sh
+configure_headless(){
+  echo "Disabling guest graphical UI and setting non-graphical boot target for this headless development image."
+  systemctl set-default multi-user.target
+  systemctl isolate multi-user.target || true
+  for unit in display-manager.service gdm.service lightdm.service sddm.service; do
+    systemctl disable --now "$unit" >/dev/null 2>&1 || true
+    systemctl mask "$unit" >/dev/null 2>&1 || true
+  done
+}
 install_packages(){
   dnf -y update
   if ! dnf -y install oracle-database-preinstall-19c unzip tar curl wget jq net-tools bind-utils chrony lsof policycoreutils-python-utils; then
@@ -13,8 +22,14 @@ configure_oracle_identity(){
   id "$(json '.profile.oracle.user')" >/dev/null 2>&1 || useradd -g "$(json '.profile.oracle.inventoryGroup')" -G "$(json '.profile.oracle.dbaGroup')" "$(json '.profile.oracle.user')"
 }
 configure_host(){
-  hostnamectl set-hostname "$(json '.profile.vm.hostname')"
-  grep -q "$(json '.profile.vm.hostname')" /etc/hosts || echo "127.0.1.1 $(json '.profile.vm.hostname')" >> /etc/hosts
+  local vm_hostname primary_ip
+  vm_hostname="$(json '.profile.vm.hostname')"
+  hostnamectl set-hostname "$vm_hostname"
+  primary_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++){if($i=="src"){print $(i+1); exit}}}')"
+  [[ -n "$primary_ip" ]] || primary_ip="$(hostname -I | awk '{print $1}')"
+  [[ -n "$primary_ip" ]] || primary_ip="127.0.0.1"
+  sed -i "/[[:space:]]$vm_hostname\b/d" /etc/hosts
+  echo "$primary_ip $vm_hostname" >> /etc/hosts
   mkdir -p "$(json '.profile.oracle.oracleBase')" "$(json '.profile.oracle.oracleHome')" "$(json '.profile.oracle.inventoryDirectory')" "$(json '.profile.oracle.dataDirectory')" "$(json '.profile.oracle.recoveryDirectory')"
   chown -R "$(json '.profile.oracle.user'):$(json '.profile.oracle.inventoryGroup')" /u01 /u02 /u03
   cat >/etc/sysctl.d/98-windchill-oracle.conf <<'EOF'
@@ -42,5 +57,5 @@ EOF
   localectl set-locale LANG=en_US.UTF-8 || true
   systemctl enable --now chronyd
 }
-main(){ install_packages; configure_oracle_identity; configure_host; }
+main(){ configure_headless; install_packages; configure_oracle_identity; configure_host; }
 stage_run "01-prepare-linux" main

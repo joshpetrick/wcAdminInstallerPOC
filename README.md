@@ -272,6 +272,10 @@ The provisioning wrapper now streams each stage command to both the console and 
 
 For AlmaLinux, the Oracle Linux convenience package `oracle-database-preinstall-19c` may not be available from enabled repositories. Stage 01 now falls back to explicit Oracle 19c prerequisite packages and creates the Oracle user/groups directly when that package is unavailable.
 
+### Linux desktop UI should stay disabled
+
+The default profile already runs VirtualBox headless, and stage `01-prepare-linux` also forces the guest into `multi-user.target` before package installation. It disables and masks common display manager units (`display-manager`, `gdm`, `lightdm`, and `sddm`) if any are present in the AlmaLinux base box, so the development image does not boot a graphical Linux UI that users do not need. This keeps the existing CPU and memory defaults unchanged while avoiding guest-side desktop services when the base box includes them.
+
 
 ### Stage `03-prepare-oracle` cannot find `C:\WindchillFoundationPOC\Media\Oracle` inside Linux
 
@@ -296,6 +300,20 @@ Oracle 19c silent install validates all privileged OS group response-file fields
 ### Oracle installer reports `Successfully Setup Software with warning(s)` and exits with code `6`
 
 Oracle Database 19.3 silent install can return exit code `6` after a successful software-only setup when optional prerequisite warnings are ignored. This POC intentionally runs the installer with `-ignorePrereqFailure` on AlmaLinux because the base Oracle 19.3 media is being used on an AlmaLinux development image. Stage `04-install-oracle` now treats exit code `6` as success-with-warnings, continues with `orainstRoot.sh` and `root.sh`, and still fails for other non-zero installer exit codes. If a prior build stopped at stage `04`, clean that incomplete build or regenerate the package and retry so the updated stage script is used.
+
+
+### Oracle install and database creation are slow
+
+Oracle's software-only installer lays down the Enterprise Edition database home from the official 19.3 media, so there is no reliable response-file switch in this POC to remove arbitrary database-home components without risking Windchill compatibility. The POC keeps the database runtime leaner by disabling Enterprise Manager (`emConfiguration=NONE`), sample schemas (`sampleSchema=false`), Database Vault (`dvConfiguration=false`), Oracle Label Security (`olsConfiguration=false`), and NetCA JavaVM listener registration. Components that Windchill commonly relies on or that Oracle includes as part of the base home, such as core RDBMS, networking, JVM support, XML, and text/spatial-capable libraries, are left installed to keep the foundation image broadly compatible.
+
+
+### NetCA says `No valid IP Address returned for the host` or `lsnrctl` is not found
+
+Stage `01-prepare-linux` now maps the configured VM hostname to the guest's primary IPv4 address in `/etc/hosts` instead of using a loopback-only entry, which allows NetCA to resolve `wc121-foundation` to a usable listener address. Stage `05-configure-listener` also runs NetCA and `lsnrctl` through `runuser` with explicit `ORACLE_HOME`, `ORACLE_BASE`, `ORACLE_SID`, and `PATH` exports so Oracle tools are found even when a login shell does not preserve the root provisioning environment.
+
+### Stage `07-configure-services` times out after DBCA already created the database
+
+DBCA leaves the new database running at the end of stage `06-create-database`, so stage `07-configure-services` now installs idempotent start/stop helper scripts. The start helper checks `v$instance` and starts the instance only when it is not already open, then opens and saves all PDB state. The systemd startup timeout is extended for the database service to accommodate first-boot CDB/PDB startup on slower developer hosts without changing CPU or memory defaults.
 
 ## Compatibility and future mapping
 

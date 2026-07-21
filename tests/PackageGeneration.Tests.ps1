@@ -125,6 +125,18 @@ Describe 'Package generation path handling' {
     $prepare | Should -Match 'groupadd -f'
   }
 
+  It 'prepare-linux disables guest graphical UI for headless dev images' {
+    $profile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'profiles/windchill-12.1.2.json') | ConvertFrom-Json
+    $vagrantfile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Vagrantfile.template')
+    $prepare = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/01-prepare-linux.sh')
+    $profile.vm.headless | Should -BeTrue
+    $vagrantfile | Should -Match "vb.gui = !cfg\['vm'\]\['headless'\]"
+    $prepare | Should -Match 'configure_headless'
+    $prepare | Should -Match 'systemctl set-default multi-user.target'
+    $prepare | Should -Match 'display-manager.service'
+    $prepare | Should -Match 'systemctl mask'
+  }
+
   It 'Vagrantfile copies Oracle media with file provisioner and stage 03 uses guest-local media path' {
     $vagrantfile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Vagrantfile.template')
     $prepareOracle = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/03-prepare-oracle.sh')
@@ -163,6 +175,34 @@ Describe 'Package generation path handling' {
     foreach ($field in @('OSDBA_GROUP','OSBACKUPDBA_GROUP','OSDGDBA_GROUP','OSKMDBA_GROUP','OSRACDBA_GROUP')) {
       $response | Should -Match $field
     }
+  }
+
+  It 'Oracle database and listener responses disable optional UI and security extras' {
+    $dbca = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/oracle/dbca.rsp.template')
+    $netca = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/oracle/netca.rsp.template')
+    $dbca | Should -Match 'emConfiguration=NONE'
+    $dbca | Should -Match 'sampleSchema=false'
+    $dbca | Should -Match 'dvConfiguration=false'
+    $dbca | Should -Match 'olsConfiguration=false'
+    $netca | Should -Match 'INSTALLED_COMPONENTS=\{"server","net8"\}'
+    $netca | Should -Not -Match 'javavm'
+  }
+
+  It 'Oracle listener and services use resolvable host and explicit Oracle runtime environment' {
+    $prepare = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/01-prepare-linux.sh')
+    $listener = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/05-configure-listener.sh')
+    $services = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/07-configure-services.sh')
+    $validate = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/08-validate-foundation.sh')
+    $prepare | Should -Match 'ip -4 route get 1.1.1.1'
+    $prepare | Should -Match 'echo "\$primary_ip \$vm_hostname" >> /etc/hosts'
+    $listener | Should -Match 'runuser -u "\$oracle_user"'
+    $listener | Should -Match "PATH='\$ORACLE_HOME/bin'"
+    $validate | Should -Match 'runuser -u "\$oracle_user"'
+    $validate | Should -Match "PATH='\$ORACLE_HOME/bin'"
+    $services | Should -Match 'windchill-oracle-start.sh'
+    $services | Should -Match 'select status from v'
+    $services | Should -Match 'instance'
+    $services | Should -Match 'TimeoutStartSec=900'
   }
 
   It 'Oracle install treats runInstaller exit code 6 as success with warnings' {
