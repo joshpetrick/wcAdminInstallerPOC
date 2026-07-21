@@ -287,6 +287,11 @@ The Oracle media file provisioner copies the ZIP as the Vagrant SSH user. The gu
 
 Oracle Database 19.3 can throw `[INS-08101]` with a Java `NullPointerException` during `supportedOSCheck` on RHEL-compatible 8.x distributions. The POC now applies the standard compatibility workaround for every AlmaLinux build by setting `CV_ASSUME_DISTID` from the profile, defaulting to `OEL7.8`, before running the Oracle installer and by writing the same value into `$ORACLE_HOME/cv/admin/cvu_config` after the installer ZIP is extracted. This is a POC workaround for Oracle 19.3 base media; no Release Update is applied in this POC.
 
+
+### Oracle installer fails with `[INS-35344]` missing privileged OS groups
+
+Oracle 19c silent install validates all privileged OS group response-file fields, including OSBACKUPDBA, OSDGDBA, OSKMDBA, and OSRACDBA. For this local single-instance development-image POC, these groups are all mapped to the configured `dba` group in `db_install.rsp.template`. This is intentionally simple and can be split into separate groups later if the hosted Admin builder needs stricter production-style separation.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.

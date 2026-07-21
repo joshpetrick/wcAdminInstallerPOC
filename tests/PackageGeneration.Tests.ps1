@@ -158,6 +158,13 @@ Describe 'Package generation path handling' {
     $installOracle | Should -Match 'runInstaller'
   }
 
+  It 'Oracle install response supplies all privileged OS groups required by 19c silent installer' {
+    $response = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/oracle/db_install.rsp.template')
+    foreach ($field in @('OSDBA_GROUP','OSBACKUPDBA_GROUP','OSDGDBA_GROUP','OSKMDBA_GROUP','OSRACDBA_GROUP')) {
+      $response | Should -Match $field
+    }
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
