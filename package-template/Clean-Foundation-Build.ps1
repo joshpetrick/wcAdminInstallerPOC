@@ -1,0 +1,2 @@
+#requires -Version 7.0
+param([string]$BuildDirectory=(Get-Location).Path,[switch]$Force) Set-StrictMode -Version Latest; $ErrorActionPreference='Stop'; if(-not $Force){$a=Read-Host "Destroy Vagrant VM and remove $BuildDirectory? Type YES"; if($a -ne 'YES'){throw 'Cleanup cancelled'}}; Push-Location $BuildDirectory; try{vagrant destroy -f}finally{Pop-Location}; Remove-Item -Recurse -Force -LiteralPath $BuildDirectory
