@@ -125,6 +125,15 @@ Describe 'Package generation path handling' {
     $prepare | Should -Match 'groupadd -f'
   }
 
+  It 'Vagrantfile copies Oracle media with file provisioner and stage 03 uses guest-local media path' {
+    $vagrantfile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Vagrantfile.template')
+    $prepareOracle = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/03-prepare-oracle.sh')
+    $vagrantfile | Should -Match "config.vm.provision 'file'"
+    $vagrantfile | Should -Match 'oracle_media_path'
+    $prepareOracle | Should -Match '/tmp/windchill-foundation-oracle-media'
+    $prepareOracle | Should -Not -Match 'C:\\WindchillFoundationPOC'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force

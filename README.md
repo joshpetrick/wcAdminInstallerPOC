@@ -272,6 +272,11 @@ The provisioning wrapper now streams each stage command to both the console and 
 
 For AlmaLinux, the Oracle Linux convenience package `oracle-database-preinstall-19c` may not be available from enabled repositories. Stage 01 now falls back to explicit Oracle 19c prerequisite packages and creates the Oracle user/groups directly when that package is unavailable.
 
+
+### Stage `03-prepare-oracle` cannot find `C:\WindchillFoundationPOC\Media\Oracle` inside Linux
+
+Windows host paths such as `C:\WindchillFoundationPOC\Media\Oracle` do not exist inside the AlmaLinux guest. The generated `Vagrantfile` now validates the configured Oracle installer path on the Windows host and uses Vagrant's file provisioner to copy only that ZIP into `/tmp/windchill-foundation-oracle-media/` inside the guest before stage `03-prepare-oracle` runs. The ZIP is then copied to guest-local installer staging and checksum-validated. Oracle media is still not included in the generated Admin ZIP or source repository.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.
