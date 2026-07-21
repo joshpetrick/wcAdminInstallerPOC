@@ -282,6 +282,11 @@ Windows host paths such as `C:\WindchillFoundationPOC\Media\Oracle` do not exist
 
 The Oracle media file provisioner copies the ZIP as the Vagrant SSH user. The guest staging directory is intentionally created under `/tmp/windchill-foundation-oracle-media` with relaxed write permissions for this local development-image POC so the upload can succeed. The ZIP is still copied only from the configured host media path, checksum-validated in the guest, and removed during sanitization.
 
+
+### Oracle installer fails with `[INS-08101] supportedOSCheck`
+
+Oracle Database 19.3 can throw `[INS-08101]` with a Java `NullPointerException` during `supportedOSCheck` on RHEL-compatible 8.x distributions. The POC now applies the standard compatibility workaround for every AlmaLinux build by setting `CV_ASSUME_DISTID` from the profile, defaulting to `OEL7.8`, before running the Oracle installer and by writing the same value into `$ORACLE_HOME/cv/admin/cvu_config` after the installer ZIP is extracted. This is a POC workaround for Oracle 19.3 base media; no Release Update is applied in this POC.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.

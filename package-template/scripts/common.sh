@@ -26,4 +26,4 @@ stage_run(){
   echo "Finished $name" | tee -a "$log"
 }
 json(){ jq -r "$1" "$CONFIG"; }
-oracle_env(){ export ORACLE_BASE=$(json '.profile.oracle.oracleBase'); export ORACLE_HOME=$(json '.profile.oracle.oracleHome'); export PATH=$ORACLE_HOME/bin:$PATH; export ORACLE_SID=$(json '.profile.oracle.sid'); }
+oracle_env(){ export ORACLE_BASE=$(json '.profile.oracle.oracleBase'); export ORACLE_HOME=$(json '.profile.oracle.oracleHome'); export PATH=$ORACLE_HOME/bin:$PATH; export ORACLE_SID=$(json '.profile.oracle.sid'); export CV_ASSUME_DISTID=$(json '.profile.oracle.assumedDistribution // "OEL7.8"'); }

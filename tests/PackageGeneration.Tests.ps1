@@ -148,6 +148,16 @@ Describe 'Package generation path handling' {
     $launcher | Should -Match '\[Environment\]::NewLine'
   }
 
+  It 'Oracle install applies CV_ASSUME_DISTID workaround for AlmaLinux Oracle 19.3 installer' {
+    $profile = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'profiles/windchill-12.1.2.json') | ConvertFrom-Json
+    $common = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/common.sh')
+    $installOracle = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/04-install-oracle.sh')
+    $profile.oracle.assumedDistribution | Should -Be 'OEL7.8'
+    $common | Should -Match 'CV_ASSUME_DISTID'
+    $installOracle | Should -Match 'cvu_config'
+    $installOracle | Should -Match 'runInstaller'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
