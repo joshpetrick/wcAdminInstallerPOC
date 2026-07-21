@@ -1,0 +1,3 @@
+# Windchill Foundation Admin Build Package
+
+Run `pwsh ./Start-Foundation-Build.ps1` from this extracted package. On first run it creates `secrets.json`; populate the Oracle SYS, SYSTEM, and PDB admin passwords, then rerun. Oracle media is not included and must exist at the configured host media path. Use `Resume-Foundation-Build.ps1` after a failed stage and `Clean-Foundation-Build.ps1 -Force` to destroy local build resources.
