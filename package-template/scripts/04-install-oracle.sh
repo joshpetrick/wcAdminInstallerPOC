@@ -15,13 +15,18 @@ main(){
   cp /vagrant/oracle/db_install.rsp.template /tmp/db_install.rsp
   chown oracle:oinstall /tmp/db_install.rsp
   echo "Using CV_ASSUME_DISTID=$CV_ASSUME_DISTID for Oracle 19.3 installer OS check compatibility on AlmaLinux."
-  if ! su - oracle -c "export CV_ASSUME_DISTID='$CV_ASSUME_DISTID'; '$ORACLE_HOME/runInstaller' -silent -responseFile /tmp/db_install.rsp -ignorePrereqFailure -waitforcompletion"; then
-    inventory="$(json '.profile.oracle.inventoryDirectory')"
-    echo "Oracle installer failed. Recent installer logs from $inventory/logs:"
-    find "$inventory/logs" -maxdepth 3 -type f -name '*.log' -print -exec tail -n 80 {} \; || true
-    exit 1
-  fi
+  set +e
+  su - oracle -c "export CV_ASSUME_DISTID='$CV_ASSUME_DISTID'; '$ORACLE_HOME/runInstaller' -silent -responseFile /tmp/db_install.rsp -ignorePrereqFailure -waitforcompletion"
+  installer_rc=$?
+  set -e
   inventory="$(json '.profile.oracle.inventoryDirectory')"
+  if [[ $installer_rc -eq 6 ]]; then
+    echo "Oracle installer completed with warnings (exit code 6); continuing because -ignorePrereqFailure is intentional for this AlmaLinux POC."
+  elif [[ $installer_rc -ne 0 ]]; then
+    echo "Oracle installer failed with exit code $installer_rc. Recent installer logs from $inventory/logs:"
+    find "$inventory/logs" -maxdepth 3 -type f -name '*.log' -print -exec tail -n 80 {} \; || true
+    exit "$installer_rc"
+  fi
   "$inventory/orainstRoot.sh"
   "$ORACLE_HOME/root.sh"
   rm -f /tmp/db_install.rsp

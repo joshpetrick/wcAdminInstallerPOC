@@ -165,6 +165,14 @@ Describe 'Package generation path handling' {
     }
   }
 
+  It 'Oracle install treats runInstaller exit code 6 as success with warnings' {
+    $installOracle = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/04-install-oracle.sh')
+    $installOracle | Should -Match 'installer_rc'
+    $installOracle | Should -Match 'installer_rc -eq 6'
+    $installOracle | Should -Match 'completed with warnings'
+    $installOracle | Should -Match 'ignorePrereqFailure'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force

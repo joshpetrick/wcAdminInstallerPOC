@@ -292,6 +292,11 @@ Oracle Database 19.3 can throw `[INS-08101]` with a Java `NullPointerException` 
 
 Oracle 19c silent install validates all privileged OS group response-file fields, including OSBACKUPDBA, OSDGDBA, OSKMDBA, and OSRACDBA. For this local single-instance development-image POC, these groups are all mapped to the configured `dba` group in `db_install.rsp.template`. This is intentionally simple and can be split into separate groups later if the hosted Admin builder needs stricter production-style separation.
 
+
+### Oracle installer reports `Successfully Setup Software with warning(s)` and exits with code `6`
+
+Oracle Database 19.3 silent install can return exit code `6` after a successful software-only setup when optional prerequisite warnings are ignored. This POC intentionally runs the installer with `-ignorePrereqFailure` on AlmaLinux because the base Oracle 19.3 media is being used on an AlmaLinux development image. Stage `04-install-oracle` now treats exit code `6` as success-with-warnings, continues with `orainstRoot.sh` and `root.sh`, and still fails for other non-zero installer exit codes. If a prior build stopped at stage `04`, clean that incomplete build or regenerate the package and retry so the updated stage script is used.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.
