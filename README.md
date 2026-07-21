@@ -102,6 +102,109 @@ pwsh
 
 Expected generated files include `wc-12.1.2-foundation-build-0.1.0/`, `wc-12.1.2-foundation-build-0.1.0.zip`, and `.sha256`. The package contract is designed so a future hosted Admin app can replace profile selection while preserving the build ZIP layout. After generation, run the package from the generated directory or from an extracted ZIP. The generated package is self-contained and can run from an extracted ZIP in a directory with no source-control metadata.
 
+
+## Procedure: build the Admin foundation package and image
+
+Follow these steps in order. The source repository and the runtime workspace are intentionally different directories.
+
+### Step 1: Verify prerequisites
+
+On the Windows Admin build computer, confirm that these are installed and available:
+
+1. Oracle VirtualBox.
+2. HashiCorp Vagrant CLI.
+3. PowerShell 7 (`pwsh`).
+4. Hardware virtualization enabled in BIOS/UEFI.
+5. Oracle Database 19c Linux x86-64 installer ZIP staged at the configured media path.
+
+The default Oracle media path is:
+
+```text
+C:\WindchillFoundationPOC\Media\Oracle\LINUX.X64_193000_db_home.zip
+```
+
+### Step 2: Open PowerShell in the source repository
+
+Example repository location:
+
+```powershell
+cd C:\Users\petri\IdeaProjects\wcAdminInstallerPOC
+pwsh
+```
+
+### Step 3: Generate the Admin build package
+
+Run:
+
+```powershell
+.\Generate-Package.ps1 `
+    -ProfilePath .\profiles\windchill-12.1.2.json `
+    -OutputDirectory .\output `
+    -Force
+```
+
+This creates the package directory and ZIP under `<repository>\output`. `-Force` is safe for regeneration because it removes only this package's deterministic package directory, ZIP, checksum, and generation report.
+
+### Step 4: Enter the generated package directory
+
+```powershell
+cd .\output\wc-12.1.2-foundation-build-0.1.0
+```
+
+Alternatively, extract `wc-12.1.2-foundation-build-0.1.0.zip` somewhere else and open PowerShell in the extracted folder.
+
+### Step 5: Create and populate secrets
+
+Run the build launcher once:
+
+```powershell
+.\Start-Foundation-Build.ps1
+```
+
+If `secrets.json` does not exist, the launcher creates it from `secrets.example.json` and stops. Edit `secrets.json`, populate the Oracle SYS, SYSTEM, and PDB admin passwords, save the file, and rerun the launcher. Do not commit or share `secrets.json`.
+
+### Step 6: Start the foundation build
+
+From the generated package directory, rerun:
+
+```powershell
+.\Start-Foundation-Build.ps1
+```
+
+The launcher validates host prerequisites and Oracle media, creates the runtime workspace under `C:\WindchillFoundationPOC`, starts Vagrant with the VirtualBox provider, and runs the Linux provisioning stages.
+
+### Step 7: Resume after a failed stage
+
+If a stage fails, keep the VM and logs in place and run the resume command printed by the launcher. The command has this shape:
+
+```powershell
+.\Resume-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<build-folder>"
+```
+
+### Step 8: Clean a failed or unwanted build
+
+Cleanup requires confirmation unless `-Force` is supplied:
+
+```powershell
+.\Clean-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<build-folder>"
+```
+
+For noninteractive cleanup:
+
+```powershell
+.\Clean-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<build-folder>" -Force
+```
+
+### Step 9: Collect successful output
+
+After a successful full integration run, final artifacts are copied to the mock shared repository path:
+
+```text
+C:\WindchillFoundationPOC\MockYDrive\Foundations\wc-12.1.2\0.1.0\virtualbox
+```
+
+Expected artifacts include the `.box`, checksum, foundation manifest, validation reports, and build log.
+
 ## Run, resume, and clean
 
 Extract the ZIP, run `pwsh ./Start-Foundation-Build.ps1`, populate the generated `secrets.json`, then rerun. Resume with `pwsh ./Resume-Foundation-Build.ps1 -BuildDirectory <path>`. Clean with `pwsh ./Clean-Foundation-Build.ps1 -BuildDirectory <path>` or add `-Force` for noninteractive cleanup.

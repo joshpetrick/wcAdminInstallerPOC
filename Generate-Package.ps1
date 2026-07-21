@@ -113,7 +113,7 @@ $PackageDirectory = Join-Path $OutputRoot $name
 $zip = Join-Path $OutputRoot "$name.zip"
 $checksumPath = "$zip.sha256"
 $reportPath = Join-Path $OutputRoot "$name-generation-report.json"
-$existing = @($PackageDirectory,$zip,$checksumPath,$reportPath) | Where-Object { Test-Path -LiteralPath $_ }
+$existing = @(@($PackageDirectory,$zip,$checksumPath,$reportPath) | Where-Object { Test-Path -LiteralPath $_ })
 if ($existing.Count -gt 0 -and -not $Force) {
   throw "Package generation stopped because output already exists.`n`nExisting path(s):`n$($existing -join "`n")`n`nRerun with -Force to replace only this package directory, ZIP, checksum, and generation report."
 }

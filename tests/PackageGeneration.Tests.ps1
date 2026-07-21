@@ -57,6 +57,13 @@ Describe 'Package generation path handling' {
     (Get-Content -LiteralPath $sentinel) | Should -Be 'keep me'
   }
 
+  It 'treats a single existing output artifact as an array under strict mode' {
+    $out = Join-Path $TestDrive 'single existing output'
+    New-Item -ItemType Directory -Force -Path $out | Out-Null
+    New-Item -ItemType File -Force -Path (Join-Path $out "$script:name.zip.sha256") | Out-Null
+    { & $script:generator -ProfilePath $script:profile -OutputDirectory $out } | Should -Throw
+  }
+
   It 'creates deterministic outputs, checksum, and required files without VirtualBox running' {
     $out = Join-Path $TestDrive 'deterministic out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
