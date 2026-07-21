@@ -45,6 +45,17 @@ function Assert-FoundationProfile($p) {
 function Get-PackageName($p) { "wc-$($p.windchillVersion.Substring(0,6))-foundation-build-$($p.artifactVersion)" }
 function ConvertTo-StableJson($o) { $o | ConvertTo-Json -Depth 100 }
 
+function Convert-TextFileToLf([string]$Path) {
+  $content = [System.IO.File]::ReadAllText($Path)
+  $content = $content -replace "`r`n", "`n" -replace "`r", "`n"
+  $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+  [System.IO.File]::WriteAllText($Path, $content, $utf8NoBom)
+}
+
+function Convert-GeneratedShellScriptsToLf([string]$PackageDirectory) {
+  Get-ChildItem -LiteralPath $PackageDirectory -Recurse -File -Include '*.sh' | ForEach-Object { Convert-TextFileToLf $_.FullName }
+}
+
 function Assert-TemplateFile([string]$RelativePath) {
   $path = Join-Path $TemplateRoot $RelativePath
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
@@ -128,6 +139,7 @@ $resolved = [ordered]@{ generatorVersion = $GeneratorVersion; generatedAt = (Get
 (ConvertTo-StableJson $resolved) | Set-Content -Encoding utf8 -LiteralPath (Join-Path $PackageDirectory 'config.json')
 Get-ChildItem -Recurse -LiteralPath $PackageDirectory -Filter 'secrets.json' | Remove-Item -Force
 Get-ChildItem -Recurse -LiteralPath $PackageDirectory | Where-Object { $_.Name -eq $profile.oracle.installerFilename -or $_.Extension -eq '.box' } | Remove-Item -Force
+Convert-GeneratedShellScriptsToLf $PackageDirectory
 Assert-GeneratedPackageComplete $PackageDirectory
 Compress-Archive -Path (Join-Path $PackageDirectory '*') -DestinationPath $zip -Force
 $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()

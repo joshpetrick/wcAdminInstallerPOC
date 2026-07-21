@@ -259,6 +259,12 @@ cd .\output\wc-12.1.2-foundation-build-0.1.0
 .\Start-Foundation-Build.ps1
 ```
 
+
+
+### Provisioning fails with `set: pipefail: invalid option name`
+
+This usually means a Linux shell script reached the guest with Windows CRLF line endings. Regenerate the Admin package after this fix; the generator normalizes all generated `*.sh` files to Unix LF before creating the ZIP. If you already have a failed build directory, clean it, regenerate the package, and start from the new generated package directory.
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.

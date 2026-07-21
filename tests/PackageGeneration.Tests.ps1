@@ -109,6 +109,13 @@ Describe 'Package generation path handling' {
     $cleanup | Should -Match 'Skipping vagrant destroy'
   }
 
+  It 'generator normalizes generated shell scripts to Unix LF endings before zipping' {
+    $generatorText = Get-Content -Raw -LiteralPath $script:generator
+    $generatorText | Should -Match 'Convert-GeneratedShellScriptsToLf'
+    $generatorText | Should -Match "-Include '\*.sh'"
+    $generatorText | Should -Match 'WriteAllText'
+  }
+
   It 'excludes media and populated secrets' {
     $out = Join-Path $TestDrive 'safe out'
     & $script:generator -ProfilePath $script:profile -OutputDirectory $out -Force
