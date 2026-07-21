@@ -60,17 +60,47 @@ Not required on Windows:
 
 Download `LINUX.X64_193000_db_home.zip` yourself to `C:\WindchillFoundationPOC\Media\Oracle`. The default SHA-256 is `ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8`. Oracle media is required only for admin image creation: the final `.box` preserves installed Oracle software and a clean database while sanitization removes installer ZIPs and extracted install media.
 
-## Directory setup
+## Directory contexts
 
-The generated package creates missing non-media directories under `C:\WindchillFoundationPOC`: `Cache`, `Builds`, `Output`, and `MockYDrive`. It never fabricates Oracle media.
+### Repository location
+
+The source repository may be any local folder, for example:
+
+```text
+C:\Users\petri\IdeaProjects\wcAdminInstallerPOC
+```
+
+Run package generation from this repository. Repository-owned files such as `package-template`, `profiles`, `schemas`, and `tests` are resolved from the generator script location, not from `C:\WindchillFoundationPOC`.
+
+### Generated package output
+
+By default, package output is created beneath the repository:
+
+```text
+<repository>\output
+```
+
+A relative `-OutputDirectory .\output` resolves under the repository root so generation is consistent even if the shell starts elsewhere.
+
+### Foundation runtime workspace
+
+The generated package creates missing non-media runtime directories under `C:\WindchillFoundationPOC`: `Cache`, `Builds`, `Output`, and `MockYDrive`. This workspace is used when the generated Admin build package is executed for Oracle media, cache, temporary VM builds, final artifacts, and mock Y-drive publication. It is not the source-code location, and the generator never fabricates Oracle media.
 
 ## Generate the package
 
 ```powershell
-pwsh ./Generate-Package.ps1 -ProfilePath ./profiles/windchill-12.1.2.json -OutputDirectory ./output
+cd C:\Users\petri\IdeaProjects\wcAdminInstallerPOC
+pwsh
+
+.\Generate-Package.ps1 `
+    -ProfilePath .\profiles\windchill-12.1.2.json `
+    -OutputDirectory .\output `
+    -Force
 ```
 
-Expected generated files include `wc-12.1.2-foundation-build-0.1.0/`, `wc-12.1.2-foundation-build-0.1.0.zip`, and `.sha256`. The package contract is designed so a future hosted Admin app can replace profile selection while preserving the build ZIP layout. The generated package is self-contained and can run from an extracted ZIP in a directory with no source-control metadata.
+`-Force` replaces only the deterministic generated package directory, ZIP, checksum, and generation report for this package. It does not delete the output root, source templates, profiles, schemas, Oracle media, or runtime workspace directories.
+
+Expected generated files include `wc-12.1.2-foundation-build-0.1.0/`, `wc-12.1.2-foundation-build-0.1.0.zip`, and `.sha256`. The package contract is designed so a future hosted Admin app can replace profile selection while preserving the build ZIP layout. After generation, run the package from the generated directory or from an extracted ZIP. The generated package is self-contained and can run from an extracted ZIP in a directory with no source-control metadata.
 
 ## Run, resume, and clean
 
