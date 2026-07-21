@@ -235,6 +235,28 @@ cd .\output\wc-12.1.2-foundation-build-0.1.0
 
 The launcher copies the generated package into an isolated build directory under `C:\WindchillFoundationPOC\Builds` and verifies that `Vagrantfile` is present before running `vagrant up`. If this fails, inspect the `build.log` path printed in the error message and verify that the generated package contains `Vagrantfile` and `config.json`.
 
+
+### VirtualBox says it could not find `SATA Controller`
+
+Older generated packages assumed the AlmaLinux base box had a storage controller named `SATA Controller`. Some base-box versions use a different controller name, which causes `VBoxManage storageattach` to fail before boot. Regenerate the Admin package after this fix so the generated `Vagrantfile` creates a dedicated `Windchill Foundation Data` SATA controller for the POC data disk instead of depending on a base-box controller name.
+
+Recommended recovery after seeing this error:
+
+```powershell
+# From the generated package folder that failed
+.\Clean-Foundation-Build.ps1 -BuildDirectory "C:\WindchillFoundationPOC\Builds\<failed-build-folder>" -Force
+
+# From the source repository
+cd C:\Users\petri\IdeaProjects\wcAdminInstallerPOC
+.\Generate-Package.ps1 `
+    -ProfilePath .\profiles\windchill-12.1.2.json `
+    -OutputDirectory .\output `
+    -Force
+
+cd .\output\wc-12.1.2-foundation-build-0.1.0
+.\Start-Foundation-Build.ps1
+```
+
 ## Compatibility and future mapping
 
 AlmaLinux 8 is an account-free RHEL 8-compatible POC OS and is not represented as PTC-certified. Windchill 12.1.2.0 is a compatibility target only; Windchill is not installed. VMware support can be added by isolating provider-specific Vagrant and packaging logic while keeping profile, manifest, validation, and publication contracts stable.
