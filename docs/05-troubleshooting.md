@@ -72,6 +72,11 @@ The staging directory under `/tmp/windchill-foundation-oracle-media` is intentio
 
 Regenerate the Admin package after this fix. Stage 02 reads `profile.java.majorVersion` and installs `java-<major>-amazon-corretto-devel`, so a copied 13.1.2 profile with `java.majorVersion` set to `21` installs Amazon Corretto 21 instead of the 12.1.2 default of 11.
 
+
+## Oracle installer fails with `Unable to find make utility in location: /usr/bin/make`
+
+Oracle relinks database binaries during the software install, so `make` must be installed even when the Oracle preinstall package path succeeds. Stage 01 now installs and verifies `make` and `binutils` after the prerequisite package step so profile-specific runs do not depend on which prerequisite branch DNF took. Regenerate the Admin package, then clean or resume from a build where stage 01 has not been marked complete.
+
 ## Oracle installer fails with `cannot find /usr/lib64/libpthread_nonshared.a`
 
 This file is provided by the Linux static glibc package. Stage 01 now installs `glibc-static` with the Oracle prerequisite packages before Oracle relinking starts. Clean or resume with a regenerated package so the prerequisite is present before stage 04 runs.

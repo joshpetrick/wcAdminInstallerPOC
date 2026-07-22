@@ -125,6 +125,8 @@ Describe 'Package generation path handling' {
     $common | Should -Match 'Last 80 log lines'
     $prepare | Should -Match 'oracle-database-preinstall-19c was not available'
     $prepare | Should -Match 'glibc-static'
+    $prepare | Should -Match 'ensure_build_tools'
+    $prepare | Should -Match '/usr/bin/make'
     $prepare | Should -Match 'ensure_legacy_libnsl'
     $prepare | Should -Match 'libnsl.so.1'
     $prepare | Should -Match 'groupadd -f'
