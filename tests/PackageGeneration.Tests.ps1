@@ -124,6 +124,7 @@ Describe 'Package generation path handling' {
     $common | Should -Match 'tee -a "\$log"'
     $common | Should -Match 'Last 80 log lines'
     $prepare | Should -Match 'oracle-database-preinstall-19c was not available'
+    $prepare | Should -Match 'glibc-static'
     $prepare | Should -Match 'groupadd -f'
   }
 
@@ -137,6 +138,13 @@ Describe 'Package generation path handling' {
     $prepare | Should -Match 'systemctl set-default multi-user.target'
     $prepare | Should -Match 'display-manager.service'
     $prepare | Should -Match 'systemctl mask'
+  }
+
+  It 'Java install uses the profile major version instead of hard-coded Corretto 11' {
+    $installJava = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/02-install-java.sh')
+    $installJava | Should -Match "json '\.profile\.java\.majorVersion'"
+    $installJava | Should -Match 'java-\$\{java_major\}-amazon-corretto-devel'
+    $installJava | Should -Not -Match 'java-11-amazon-corretto-devel'
   }
 
   It 'Vagrantfile copies Oracle media with file provisioner and stage 03 uses guest-local media path' {

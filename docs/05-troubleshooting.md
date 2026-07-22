@@ -68,6 +68,14 @@ Windows paths such as `C:\WindchillFoundationPOC\Media\Oracle` do not exist insi
 
 The staging directory under `/tmp/windchill-foundation-oracle-media` is intentionally writable for the Vagrant file provisioner in this local POC. Regenerate the package if you are using an older build package.
 
+## Profile requests Java 21 but the VM installs Java 11
+
+Regenerate the Admin package after this fix. Stage 02 reads `profile.java.majorVersion` and installs `java-<major>-amazon-corretto-devel`, so a copied 13.1.2 profile with `java.majorVersion` set to `21` installs Amazon Corretto 21 instead of the 12.1.2 default of 11.
+
+## Oracle installer fails with `cannot find /usr/lib64/libpthread_nonshared.a`
+
+This file is provided by the Linux static glibc package. Stage 01 now installs `glibc-static` with the Oracle prerequisite packages before Oracle relinking starts. Clean or resume with a regenerated package so the prerequisite is present before stage 04 runs.
+
 ## Oracle installer fails with `[INS-08101] supportedOSCheck`
 
 Oracle Database 19.3 can fail supported OS checks on RHEL-compatible 8.x distributions. The POC sets `CV_ASSUME_DISTID` from the profile, defaulting to `OEL7.8`, and writes the same value into Oracle's `cvu_config` after extraction.

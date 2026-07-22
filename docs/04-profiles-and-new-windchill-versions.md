@@ -42,6 +42,7 @@ Edit the new file and update at least these fields:
 | `artifactVersion` | `0.1.0` | `0.1.0` or higher | Increment when rebuilding the same target. |
 | `vm.name` | `wc121-foundation-build` | `wc131-foundation-build` | Avoid VirtualBox VM name collisions. |
 | `vm.hostname` | `wc121-foundation` | `wc131-foundation` | Avoid hostname ambiguity. |
+| `java.majorVersion` | `11` | `21` | The Java install stage now installs `java-<major>-amazon-corretto-devel`, so a 13.1.2 profile can request Corretto 21 while keeping the same Oracle 19c settings. |
 
 The generated package name uses the first three version components. For `13.1.2.0`, expect:
 
@@ -54,7 +55,7 @@ wc-13.1.2-foundation-virtualbox-0.1.0.box
 
 Before calling a new profile supported, verify the target Windchill version's requirements outside this POC:
 
-- Supported Java major version and vendor.
+- Supported Java major version and vendor. If the target needs Corretto 21, set `java.majorVersion` to `21`; do not edit the shell script.
 - Supported Oracle database version and patch level.
 - Supported operating system family and version.
 - Required database character set, national character set, CDB/PDB requirements, and service naming.

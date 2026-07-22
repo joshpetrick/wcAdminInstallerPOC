@@ -11,9 +11,9 @@ configure_headless(){
 }
 install_packages(){
   dnf -y update
-  if ! dnf -y install oracle-database-preinstall-19c unzip tar curl wget jq net-tools bind-utils chrony lsof policycoreutils-python-utils; then
+  if ! dnf -y install oracle-database-preinstall-19c unzip tar curl wget jq net-tools bind-utils chrony lsof policycoreutils-python-utils glibc-static; then
     echo "oracle-database-preinstall-19c was not available from enabled AlmaLinux repositories; installing explicit Oracle 19c prerequisite packages instead."
-    dnf -y install bc binutils elfutils-libelf elfutils-libelf-devel fontconfig-devel glibc glibc-devel ksh libaio libaio-devel libXrender libX11 libXau libXi libXtst libgcc libnsl libstdc++ libstdc++-devel libxcb make net-tools nfs-utils smartmontools sysstat unixODBC unzip tar curl wget jq bind-utils chrony lsof policycoreutils-python-utils
+    dnf -y install bc binutils elfutils-libelf elfutils-libelf-devel fontconfig-devel glibc glibc-devel glibc-static ksh libaio libaio-devel libXrender libX11 libXau libXi libXtst libgcc libnsl libstdc++ libstdc++-devel libxcb make net-tools nfs-utils smartmontools sysstat unixODBC unzip tar curl wget jq bind-utils chrony lsof policycoreutils-python-utils
   fi
 }
 configure_oracle_identity(){
