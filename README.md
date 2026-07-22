@@ -102,6 +102,10 @@ The generated package creates these runtime directories as needed:
 
 The current launcher packages the box in the per-run build directory and prints next-step guidance. It does not publish active VMs directly from the mock shared repository.
 
+## Project formatting standards
+
+The repository includes `.editorconfig` plus `.gitattributes` so editors and Git agree on readable formatting: JSON and Markdown use two-space indentation with LF endings, PowerShell scripts use two-space indentation with CRLF endings for Windows-friendly editing, and Linux shell scripts always use LF endings for Vagrant provisioning. Keep profile and schema JSON pretty-printed rather than minified so reviewers can audit version and infrastructure changes easily.
+
 ## Support status
 
 This is a proof of concept, not a PTC certification statement. The profile declares `POC_NOT_CERTIFIED`, and the documentation intentionally distinguishes compatibility targeting from certified Windchill support. See [Profiles and new Windchill versions](docs/04-profiles-and-new-windchill-versions.md) before creating additional profiles.

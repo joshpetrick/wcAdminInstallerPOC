@@ -1,1 +1,25 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","required":["profileId","windchillVersion","compatibilityStatus","artifactVersion","provider","baseVagrantBox","linuxVersion","javaVersion","oracleVersion","oracleEdition","cdbName","pdbName","serviceName","vm","buildTimestamp","stageDurations","generatorVersion","artifactChecksumSha256","finalValidationStatus"]}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "profileId",
+    "windchillVersion",
+    "compatibilityStatus",
+    "artifactVersion",
+    "provider",
+    "baseVagrantBox",
+    "linuxVersion",
+    "javaVersion",
+    "oracleVersion",
+    "oracleEdition",
+    "cdbName",
+    "pdbName",
+    "serviceName",
+    "vm",
+    "buildTimestamp",
+    "stageDurations",
+    "generatorVersion",
+    "artifactChecksumSha256",
+    "finalValidationStatus"
+  ]
+}

@@ -1,1 +1,21 @@
-Describe 'Profile validation' { It 'valid profile accepted and invalid rejected' { $out=Join-Path $TestDrive 'out'; & $PSScriptRoot/../Generate-Package.ps1 -ProfilePath $PSScriptRoot/../profiles/windchill-12.1.2.json -OutputDirectory $out; $LASTEXITCODE | Should -Be 0; $p=Get-Content -Raw $PSScriptRoot/../profiles/windchill-12.1.2.json|ConvertFrom-Json; $p.provider='vmware'; $bad=Join-Path $TestDrive 'bad.json'; $p|ConvertTo-Json -Depth 50|Set-Content $bad; { & $PSScriptRoot/../Generate-Package.ps1 -ProfilePath $bad -OutputDirectory (Join-Path $TestDrive 'badout') } | Should -Throw } }
+Describe 'Profile validation' {
+  It 'valid profile accepted and invalid rejected' {
+    $out = Join-Path $TestDrive 'out'
+    & $PSScriptRoot/../Generate-Package.ps1 `
+      -ProfilePath $PSScriptRoot/../profiles/windchill-12.1.2.json `
+      -OutputDirectory $out
+
+    $LASTEXITCODE | Should -Be 0
+
+    $p = Get-Content -Raw $PSScriptRoot/../profiles/windchill-12.1.2.json | ConvertFrom-Json
+    $p.provider = 'vmware'
+    $bad = Join-Path $TestDrive 'bad.json'
+    $p | ConvertTo-Json -Depth 50 | Set-Content $bad
+
+    {
+      & $PSScriptRoot/../Generate-Package.ps1 `
+        -ProfilePath $bad `
+        -OutputDirectory (Join-Path $TestDrive 'badout')
+    } | Should -Throw
+  }
+}
