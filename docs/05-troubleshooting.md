@@ -76,6 +76,10 @@ Regenerate the Admin package after this fix. Stage 02 reads `profile.java.majorV
 
 This file is provided by the Linux static glibc package. Stage 01 now installs `glibc-static` with the Oracle prerequisite packages before Oracle relinking starts. Clean or resume with a regenerated package so the prerequisite is present before stage 04 runs.
 
+## Oracle installer fails with `libnsl.so.1: cannot open shared object file`
+
+Oracle 19.3 includes a bundled Perl that expects the legacy `libnsl.so.1` soname on EL8-style guests. Stage 01 now verifies that `libnsl.so.1` is available after prerequisite installation, tries to install the package capability that provides it, and, for this local POC only, falls back to linking `libnsl.so.1` to the installed `libnsl.so.2` when the enabled AlmaLinux repositories do not provide the legacy soname directly. Also avoid changing `oracle.assumedDistribution` to `OL8` unless the profile has completed a full build; the checked-in `OEL7.8` compatibility override is the known-good default for the base Oracle 19.3 media used here.
+
 ## Oracle installer fails with `[INS-08101] supportedOSCheck`
 
 Oracle Database 19.3 can fail supported OS checks on RHEL-compatible 8.x distributions. The POC sets `CV_ASSUME_DISTID` from the profile, defaulting to `OEL7.8`, and writes the same value into Oracle's `cvu_config` after extraction.

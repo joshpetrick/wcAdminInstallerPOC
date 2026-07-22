@@ -11,10 +11,28 @@ configure_headless(){
 }
 install_packages(){
   dnf -y update
-  if ! dnf -y install oracle-database-preinstall-19c unzip tar curl wget jq net-tools bind-utils chrony lsof policycoreutils-python-utils glibc-static; then
+  if ! dnf -y install oracle-database-preinstall-19c unzip tar curl wget jq net-tools bind-utils chrony lsof policycoreutils-python-utils glibc-static libnsl; then
     echo "oracle-database-preinstall-19c was not available from enabled AlmaLinux repositories; installing explicit Oracle 19c prerequisite packages instead."
     dnf -y install bc binutils elfutils-libelf elfutils-libelf-devel fontconfig-devel glibc glibc-devel glibc-static ksh libaio libaio-devel libXrender libX11 libXau libXi libXtst libgcc libnsl libstdc++ libstdc++-devel libxcb make net-tools nfs-utils smartmontools sysstat unixODBC unzip tar curl wget jq bind-utils chrony lsof policycoreutils-python-utils
   fi
+  ensure_legacy_libnsl
+}
+ensure_legacy_libnsl(){
+  if [[ -e /usr/lib64/libnsl.so.1 ]] || ldconfig -p 2>/dev/null | grep -q 'libnsl.so.1'; then
+    return 0
+  fi
+  dnf -y install 'libnsl.so.1()(64bit)' || dnf -y install libnsl || true
+  if [[ -e /usr/lib64/libnsl.so.1 ]] || ldconfig -p 2>/dev/null | grep -q 'libnsl.so.1'; then
+    return 0
+  fi
+  if [[ -e /usr/lib64/libnsl.so.2 ]]; then
+    echo "libnsl.so.1 was not provided by enabled repositories; linking libnsl.so.1 to libnsl.so.2 for the Oracle 19.3 bundled Perl compatibility check in this local POC."
+    ln -sfn /usr/lib64/libnsl.so.2 /usr/lib64/libnsl.so.1
+    ldconfig
+    return 0
+  fi
+  echo "libnsl.so.1 is required by the Oracle 19.3 bundled Perl but was not found. Enable the repository that provides libnsl.so.1 and rerun this stage."
+  return 1
 }
 configure_oracle_identity(){
   groupadd -f "$(json '.profile.oracle.inventoryGroup')"

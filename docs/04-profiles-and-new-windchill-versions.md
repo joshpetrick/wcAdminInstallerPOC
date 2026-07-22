@@ -43,6 +43,7 @@ Edit the new file and update at least these fields:
 | `vm.name` | `wc121-foundation-build` | `wc131-foundation-build` | Avoid VirtualBox VM name collisions. |
 | `vm.hostname` | `wc121-foundation` | `wc131-foundation` | Avoid hostname ambiguity. |
 | `java.majorVersion` | `11` | `21` | The Java install stage now installs `java-<major>-amazon-corretto-devel`, so a 13.1.2 profile can request Corretto 21 while keeping the same Oracle 19c settings. |
+| `oracle.assumedDistribution` | `OEL7.8` | Keep `OEL7.8` unless a full build proves another value works. | The base Oracle 19.3 media has been more reliable in this POC with the existing compatibility override than ad hoc `OL8` changes on AlmaLinux. |
 
 The generated package name uses the first three version components. For `13.1.2.0`, expect:
 
@@ -86,7 +87,7 @@ cd .\output\wc-13.1.2-foundation-build-0.1.0
 | `provider` | Only `virtualbox` is implemented. |
 | `compatibilityStatus` | The generator expects `POC_NOT_CERTIFIED` for this POC. |
 | `oracle.installerFilename` and `oracle.installerSha256` | Must match the actual Oracle media being used. |
-| `oracle.assumedDistribution` | Workaround for Oracle 19.3 installer checks on AlmaLinux; changing it can break install. |
+| `oracle.assumedDistribution` | Workaround for Oracle 19.3 installer checks on AlmaLinux; changing it can break install. Keep `OEL7.8` unless the new profile completes a full build with another value. |
 | `paths.*` | These control the Windows runtime workspace; keep them consistent unless documenting a new workspace standard. |
 
 ## Validation expectation for a new profile
