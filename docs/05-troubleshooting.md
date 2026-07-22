@@ -77,9 +77,9 @@ Regenerate the Admin package after this fix. Stage 02 reads `profile.java.majorV
 
 Oracle relinks database binaries during the software install, so `make` must be installed even when the Oracle preinstall package path succeeds. Stage 01 now installs and verifies `make` and `binutils` after the prerequisite package step so profile-specific runs do not depend on which prerequisite branch DNF took. Regenerate the Admin package, then clean or resume from a build where stage 01 has not been marked complete.
 
-## Oracle installer fails with `cannot find /usr/lib64/libpthread_nonshared.a`
+## Oracle installer fails with `crti.o`, `libc_nonshared.a`, or `libpthread_nonshared.a` missing
 
-This file is provided by the Linux static glibc package. Stage 01 now installs `glibc-static` with the Oracle prerequisite packages before Oracle relinking starts. Clean or resume with a regenerated package so the prerequisite is present before stage 04 runs.
+Oracle relinking needs the Linux glibc development and static link inputs. Stage 01 now installs `glibc-devel` and `glibc-static`, then verifies `/usr/lib64/crti.o`, `/usr/lib64/libc_nonshared.a`, and `/usr/lib64/libpthread_nonshared.a` before Oracle stage 04 starts. If this error appears in a reused build directory, regenerate the Admin package and clean the build, or rerun from a state where stage 01 has not already been marked complete, so the new prerequisite verification can run before Oracle relinking.
 
 ## Oracle installer fails with `libnsl.so.1: cannot open shared object file`
 
