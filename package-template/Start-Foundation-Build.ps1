@@ -40,7 +40,8 @@ try {
   & vagrant up --provider=virtualbox *>&1 | Tee-Object -FilePath $log
   if ($LASTEXITCODE) { throw 'vagrant up failed' }
   & vagrant halt
-  & vagrant package --output "wc-12.1.2-foundation-virtualbox-$($p.artifactVersion).box"
+  $versionLabel = $p.windchillVersion.Substring(0,6)
+  & vagrant package --output "wc-$versionLabel-foundation-virtualbox-$($p.artifactVersion).box"
   Write-Host 'Build completed; run packaged-box validation before publication.'
 } catch {
   $message = @(

@@ -94,6 +94,8 @@ Describe 'Package generation path handling' {
     $launcher = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Start-Foundation-Build.ps1')
     $launcher | Should -Match 'Get-ChildItem -LiteralPath \$SourceDirectory'
     $launcher | Should -Match 'Assert-FileExists .*Vagrantfile'
+    $launcher | Should -Match '\$versionLabel = \$p.windchillVersion.Substring\(0,6\)'
+    $launcher | Should -Match 'wc-\$versionLabel-foundation-virtualbox'
     $launcher | Should -Not -Match 'Join-Path \$PSScriptRoot.*\*'
   }
 

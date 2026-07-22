@@ -1,3 +1,52 @@
 # Windchill Foundation Admin Build Package
 
-Run `pwsh ./Start-Foundation-Build.ps1` from this extracted package. On first run it creates `secrets.json`; populate the Oracle SYS, SYSTEM, and PDB admin passwords, then rerun. Oracle media is not included and must exist at the configured host media path. Use `Resume-Foundation-Build.ps1` after a failed stage and `Clean-Foundation-Build.ps1 -Force` to destroy local build resources.
+This generated package is self-contained and does not require Git. Run it from this folder or from an extracted copy of the ZIP.
+
+## Quick start
+
+1. Confirm Oracle media exists at the host path configured in `config.json`.
+2. Run:
+
+   ```powershell
+   pwsh .\Start-Foundation-Build.ps1
+   ```
+
+3. On first run, populate the generated `secrets.json` and rerun the same command.
+4. If a stage fails, use the printed resume command:
+
+   ```powershell
+   pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-folder>'
+   ```
+
+5. To discard a failed build, use:
+
+   ```powershell
+   pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-folder>' -Force
+   ```
+
+## Successful output
+
+The launcher creates a timestamped build folder under the configured Windows build directory, usually:
+
+```text
+C:\WindchillFoundationPOC\Builds\<build-folder>
+```
+
+After successful provisioning, `vagrant package` creates the reusable `.box` in that build folder. Add the box to local Vagrant with:
+
+```powershell
+vagrant box add wc-foundation '<path-to-box>' --force
+```
+
+Then create a separate consumer folder with its own `Vagrantfile` and run `vagrant up`.
+
+## SSH
+
+From any folder containing the relevant `Vagrantfile`:
+
+```powershell
+vagrant ssh
+vagrant ssh-config
+```
+
+Use `vagrant ssh-config` for PuTTY host, port, user, and private-key settings. The default SSH user is `vagrant`; use `sudo su - oracle` inside Linux to become the Oracle OS user.
