@@ -10,11 +10,24 @@ function Assert-Secrets($s) {
   if ($p.Length -lt 12 -or $p -notmatch '[A-Z]' -or $p -notmatch '[a-z]' -or $p -notmatch '[0-9]' -or $p -notmatch '[^A-Za-z0-9]') { throw 'SQL Server SA password must be at least 12 characters and include uppercase, lowercase, numeric, and symbol characters. Avoid dictionary words and the username sa.' }
 }
 
-function Invoke-RebootValidation([string]$LogPath) {
-  Write-Host 'Running Vagrant-managed reboot validation after provisioning.'
-  & vagrant reload --force *>&1 | Tee-Object -FilePath $LogPath -Append
-  if ($LASTEXITCODE) { throw 'vagrant reload --force failed during reboot validation' }
-  & vagrant ssh -c 'sudo /vagrant/scripts/06-reboot-validation.sh' *>&1 | Tee-Object -FilePath $LogPath -Append
+function ConvertTo-BashSingleQuoted([string]$Value) {
+  return "'" + $Value.Replace("'", "'\\''") + "'"
+}
+
+function Invoke-RebootValidation([string]$LogPath,[string]$SaPassword,[int]$Port) {
+  Write-Host 'Running SSH-managed reboot validation after provisioning.'
+  & vagrant ssh -c 'sudo nohup /usr/sbin/shutdown -r now >/dev/null 2>&1 &' *>&1 | Tee-Object -FilePath $LogPath -Append
+  Start-Sleep -Seconds 15
+  $ready = $false
+  for ($i = 1; $i -le 60; $i++) {
+    & vagrant ssh -c 'echo reboot-ready' *>&1 | Tee-Object -FilePath $LogPath -Append
+    if ($LASTEXITCODE -eq 0) { $ready = $true; break }
+    Start-Sleep -Seconds 5
+  }
+  if (-not $ready) { throw 'VM did not become reachable over SSH after reboot validation restart' }
+  $quotedPassword = ConvertTo-BashSingleQuoted $SaPassword
+  $validationCommand = "sudo systemctl is-enabled mssql-server >/dev/null && sudo systemctl is-active --quiet mssql-server && sudo ss -ltn | grep -q ':$Port ' && SQLCMDPASSWORD=$quotedPassword /opt/mssql-tools18/bin/sqlcmd -S localhost,$Port -U sa -C -l 30 -Q 'SET NOCOUNT ON; SELECT 1;' >/dev/null"
+  & vagrant ssh -c $validationCommand *>&1 | Tee-Object -FilePath $LogPath -Append
   if ($LASTEXITCODE) { throw 'post-reboot foundation validation failed' }
 }
 function Copy-PackageToBuildDirectory([string]$SourceDirectory,[string]$DestinationDirectory) {
@@ -36,7 +49,7 @@ Push-Location $work
 try {
   & vagrant up --provider=virtualbox *>&1 | Tee-Object -FilePath $log
   if ($LASTEXITCODE) { throw 'vagrant up failed' }
-  Invoke-RebootValidation -LogPath $log
+  Invoke-RebootValidation -LogPath $log -SaPassword ([string](Read-Json $secretsPath).database.sqlServer.saPassword) -Port ([int]$p.database.sqlServer.port)
   & vagrant halt
   $versionLabel = $p.windchillVersion.Substring(0,6)
   $boxName = "wc-$versionLabel-foundation-alma9-sqlserver2022-virtualbox-$($p.artifactVersion).box"

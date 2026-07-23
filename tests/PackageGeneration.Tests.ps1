@@ -44,7 +44,9 @@ Describe 'SQL Server provider package generation' {
     $validate | Should -Match 'Agent XPs'
     $validate | Should -Match 'No setting for the given option'
     $start | Should -Match 'Invoke-RebootValidation'
-    $start | Should -Match 'vagrant reload --force'
+    $start | Should -Match 'sudo nohup /usr/sbin/shutdown -r now'
+    $start | Should -Match 'SQLCMDPASSWORD'
+    $start | Should -Not -Match 'vagrant reload --force'
   }
 
   It 'active SQL Server scripts contain no Oracle installer commands' {

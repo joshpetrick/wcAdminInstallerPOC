@@ -246,7 +246,7 @@ For the normal POC path, prefer a clean rebuild with the regenerated package so 
 
 Meaning: provisioning completed through SQL Server validation and sanitization, but the old Vagrantfile attempted an additional inline guest reboot as a shell provisioner. After sanitization, guest identity cleanup can make that inline guest-operation path fragile even though the VM itself is healthy.
 
-What changed: reboot persistence is now orchestrated from `Start-Foundation-Build.ps1` with `vagrant reload --force`, followed by an explicit SSH call to `scripts/06-reboot-validation.sh`. This keeps the reboot validation requirement but avoids the fragile inline reboot provisioner.
+What changed: reboot persistence is now orchestrated from `Start-Foundation-Build.ps1` with an SSH-triggered guest reboot, an SSH readiness loop, and inline post-reboot SQL Server checks. This keeps the reboot validation requirement without asking Vagrant to remount VirtualBox shared folders after sanitization.
 
 What to do:
 
@@ -256,8 +256,9 @@ What to do:
 
 ```powershell
 vagrant status
-vagrant reload --force
-vagrant ssh -c 'sudo /vagrant/scripts/06-reboot-validation.sh'
+vagrant ssh -c 'sudo nohup /usr/sbin/shutdown -r now >/dev/null 2>&1 &'
+# wait about 1-2 minutes, then verify SSH and SQL Server
+vagrant ssh -c "sudo systemctl is-active --quiet mssql-server && sudo ss -ltn | grep -q ':1433 '"
 ```
 
-If those commands pass, the SQL Server foundation itself is healthy; the failure was in the old host-side reboot orchestration.
+If those commands pass, the SQL Server foundation itself is healthy; the failure was in the old host-side reboot orchestration or VirtualBox shared-folder remount path.
