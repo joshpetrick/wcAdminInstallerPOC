@@ -14,6 +14,7 @@ fail_diag(){
 read_mssql_conf_bool(){
   local key="$1" section="${1%%.*}" name="${1#*.}" value
   value="$(/opt/mssql/bin/mssql-conf get "$key" 2>/dev/null | awk -F= '
+    /No setting for the given option/ || /NoSettingForTheGivenOption/ {next}
     NF > 1 {gsub(/[[:space:]]/,"",$2); print tolower($2); next}
     NF == 1 {gsub(/[[:space:]]/,"",$1); print tolower($1)}
   ' | tail -n 1)"
@@ -40,7 +41,7 @@ is_true_value(){
   [[ "$1" == "true" || "$1" == "1" || "$1" == "yes" || "$1" == "on" ]]
 }
 main(){
-  local sqlcmd port pass metadata version level edition engine package status=PASS contained max_memory agent_enabled os_pretty os_version
+  local sqlcmd port pass metadata version level edition engine package status=PASS contained max_memory agent_enabled agent_xps os_pretty os_version
   sqlcmd="$(sqlcmd_path)"; port="$(json "$cfg.port")"; pass="$(secret_json '.database.sqlServer.saPassword')"
   echo "Validating SQL Server package and executable presence."
   rpm -q mssql-server >/dev/null || fail_diag 'mssql-server package check'
@@ -60,9 +61,12 @@ main(){
   contained="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'contained database authentication';")" || fail_diag 'contained database authentication query'
   max_memory="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'max server memory (MB)';")" || fail_diag 'max server memory query'
   agent_enabled="$(read_mssql_conf_bool sqlagent.enabled)"
+  agent_xps="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'Agent XPs';")" || fail_diag 'Agent XPs query'
   [[ "$contained" == "1" ]] || fail_diag "contained database authentication expected 1 found $contained"
   [[ "$max_memory" == "$(json "$cfg.maxMemoryMb")" ]] || fail_diag "max memory expected $(json "$cfg.maxMemoryMb") found $max_memory"
-  [[ "$(json "$cfg.enableAgent")" != "true" ]] || is_true_value "$agent_enabled" || fail_diag "SQL Server Agent expected true found ${agent_enabled:-<empty>}; inspect 'sudo /opt/mssql/bin/mssql-conf get sqlagent.enabled' and /var/opt/mssql/mssql.conf"
+  if [[ "$(json "$cfg.enableAgent")" == "true" ]]; then
+    is_true_value "$agent_enabled" || [[ "$agent_xps" == "1" ]] || fail_diag "SQL Server Agent expected true found ${agent_enabled:-<empty>} and Agent XPs $agent_xps; inspect 'sudo /opt/mssql/bin/mssql-conf get sqlagent.enabled' and /var/opt/mssql/mssql.conf"
+  fi
   echo "Running temporary database functional validation."
   SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -Q "CREATE DATABASE FoundationValidation; ALTER DATABASE FoundationValidation SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE FoundationValidation;" >/dev/null || fail_diag 'temporary database create/drop'
   ! SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -h -1 -Q "SELECT name FROM sys.databases WHERE name='FoundationValidation';" | grep -q FoundationValidation || fail_diag 'temporary database cleanup check'

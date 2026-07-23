@@ -200,3 +200,44 @@ sudo systemctl restart mssql-server
 ```
 
 Then resume the generated package. The production POC path should configure this automatically; manual changes are only for investigating a partially built VM.
+
+## What stage 05 (`05-validate-database`) checks
+
+Stage 05 is not creating a Windchill database. It is a gate that proves the foundation SQL Server instance is usable before the VM is sanitized and boxed. The stage checks that:
+
+- `mssql-server`, `sqlservr`, and `sqlcmd` are installed.
+- `mssql-server` is enabled, active, and listening on the configured local port.
+- SQL authentication works with the protected `saPassword` from `secrets.json`.
+- SQL Server reports version 16.x and meets the configured CU10-or-later minimum.
+- Developer Edition, contained database authentication, SQL Server Agent/Agent XPs, and max memory match the profile.
+- A temporary `FoundationValidation` database can be created and removed.
+
+A `vagrant up failed` message at this point means Vagrant is reporting that the Linux validation script returned a non-zero exit code. Use the `Log command` shown by `Start-Foundation-Build.ps1` first, then use `vagrant ssh` from the build directory for deeper inspection.
+
+## Stage 05 reports `No setting for the given option` for `sqlagent.enabled`
+
+Meaning: SQL Server is active, but the prior package did not persist the `[sqlagent] enabled = true` entry in `/var/opt/mssql/mssql.conf`, or the `mssql-conf get` output was parsed as a setting value. SQL Server Agent on modern Linux SQL Server is enabled with `mssql-conf set sqlagent.enabled true` and a service restart; SSMS visibility also depends on the SQL `Agent XPs` option.
+
+What to do:
+
+1. Regenerate the Admin package so stage 04 persists `[sqlagent] enabled = true`, enables `Agent XPs`, and stage 05 ignores `No setting...` as a missing value instead of treating it as the value.
+2. For an existing failed VM, inspect the state:
+
+```powershell
+vagrant ssh
+sudo /opt/mssql/bin/mssql-conf get sqlagent.enabled
+sudo sed -n '/^\[sqlagent\]/,/^\[/p' /var/opt/mssql/mssql.conf
+/opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -C -Q "SELECT value_in_use FROM sys.configurations WHERE name = 'Agent XPs';"
+```
+
+3. If you are only diagnosing the existing VM, you can apply the expected setting manually and then resume:
+
+```powershell
+vagrant ssh
+sudo /opt/mssql/bin/mssql-conf set sqlagent.enabled true
+sudo systemctl restart mssql-server
+exit
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+For the normal POC path, prefer a clean rebuild with the regenerated package so the final `.box` is produced only from scripted configuration.

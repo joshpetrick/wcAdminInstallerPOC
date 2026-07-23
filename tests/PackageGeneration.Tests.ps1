@@ -31,12 +31,16 @@ Describe 'SQL Server provider package generation' {
     $configure | Should -Match 'wait_for_sqlserver'
     $configure | Should -Match 'timeout 900'
     $configure | Should -Match 'SQLCMDPASSWORD'
+    $configure | Should -Match 'ensure_mssql_conf_key'
+    $configure | Should -Match "sp_configure 'Agent XPs'"
     $configure | Should -Not -Match '(^|[^A-Z_])SA_PASSWORD='
     $validate | Should -Match "SERVERPROPERTY\('ProductVersion'\)"
     $validate | Should -Match 'FoundationValidation'
     $validate | Should -Match 'read_mssql_conf_bool'
     $validate | Should -Match '/var/opt/mssql/mssql.conf'
     $validate | Should -Match 'SQL Server Agent expected true'
+    $validate | Should -Match 'Agent XPs'
+    $validate | Should -Match 'No setting for the given option'
   }
 
   It 'active SQL Server scripts contain no Oracle installer commands' {
