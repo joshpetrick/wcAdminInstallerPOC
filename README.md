@@ -2,6 +2,31 @@
 
 This repository contains a proof-of-concept Admin package generator for building reusable VirtualBox/Vagrant foundation images. The generated package is self-contained and can run without Git. The project now uses a **database-provider architecture** so the Admin profile selects a provider and the generated package includes only the provider implementation needed for that build.
 
+## Documentation entry point
+
+Use this README as the starting point for the POC. The sections below summarize the workflow, and the linked chapters provide the detailed, step-by-step procedures. If you are new to Vagrant or this project, read the chapters in order.
+
+| Chapter | Purpose |
+| --- | --- |
+| [Concepts and architecture](docs/01-concepts-and-architecture.md) | Explains the provider boundary, the active SQL Server provider, and the disabled Oracle provider. |
+| [Admin build procedure](docs/02-admin-build-procedure.md) | Shows how to generate the Admin package, create `secrets.json`, start the build, resume after failures, and clean failed builds. |
+| [Box usage and SSH](docs/03-box-usage-and-ssh.md) | Shows how to add/use the generated `.box`, connect with `vagrant ssh`, and connect with PuTTY. |
+| [Profiles and new Windchill versions](docs/04-profiles-and-new-windchill-versions.md) | Explains the active 13.1.2 SQL Server profile and how future profiles should model provider settings. |
+| [Troubleshooting](docs/05-troubleshooting.md) | Lists common build failures and the exact resume/cleanup commands to use after corrective action. |
+| [Security and credentials](docs/06-security-and-credentials.md) | Documents `secrets.json`, SQL Server SA password handling, sanitization, and future credential-rotation expectations. |
+
+### Command map
+
+| Task | Command |
+| --- | --- |
+| Generate package | `pwsh .\Generate-Package.ps1 -ProfilePath .\profiles\windchill-13.1.2-sqlserver.json -OutputDirectory .\output -Force` |
+| Start build from extracted package | `pwsh .\Start-Foundation-Build.ps1` |
+| Resume a failed build | `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` |
+| Clean/destroy a failed build VM | `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` |
+| Run static/Pester checks | `pwsh .\Invoke-Tests.ps1` |
+
+`Clean-Foundation-Build.ps1` is the supported cleanup entry point for failed or unwanted build VMs. Prefer it over manually deleting build folders because it runs `vagrant destroy -f` before removing files.
+
 ## Active POC target
 
 | Area | Value |

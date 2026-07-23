@@ -36,3 +36,21 @@ Describe 'SQL Server provider package generation' {
     ($active -join "`n") | Should -Not -Match 'dbca|netca|lsnrctl|sqlplus|LINUX\.X64_193000_db_home\.zip|OPatch|ORACLE_HOME|ORACLE_BASE'
   }
 }
+
+
+Describe 'Documentation entry points' {
+  It 'main README links chapter docs and cleanup command' {
+    $readme = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'README.md')
+    $readme | Should -Match 'docs/01-concepts-and-architecture.md'
+    $readme | Should -Match 'docs/02-admin-build-procedure.md'
+    $readme | Should -Match 'docs/03-box-usage-and-ssh.md'
+    $readme | Should -Match 'Clean-Foundation-Build.ps1'
+  }
+
+  It 'generated package README preserves cleanup and resume instructions' {
+    $packageReadme = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/README.md.template')
+    $packageReadme | Should -Match 'Start-Foundation-Build.ps1'
+    $packageReadme | Should -Match 'Resume-Foundation-Build.ps1'
+    $packageReadme | Should -Match 'Clean-Foundation-Build.ps1'
+  }
+}
