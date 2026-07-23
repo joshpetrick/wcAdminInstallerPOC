@@ -9,13 +9,29 @@ validate_password(){
   [[ -n "$p" && "$p" != "CHANGE_ME" && "$p" != "Password123" ]]
   [[ ${#p} -ge 12 && "$p" =~ [A-Z] && "$p" =~ [a-z] && "$p" =~ [0-9] && "$p" =~ [^A-Za-z0-9] ]] || { echo "SQL Server saPassword must be at least 12 characters and include uppercase, lowercase, numeric, and symbol characters. Avoid dictionary words and the username sa."; return 1; }
 }
+wait_for_sqlserver(){
+  local sqlcmd port pass deadline
+  sqlcmd="$(sqlcmd_path)"; port="$(json "$cfg.port")"; pass="$(sa_password)"; deadline=$((SECONDS + 300))
+  echo "Waiting for SQL Server to accept local connections on localhost,$port."
+  until SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 5 -Q "SELECT 1" >/dev/null 2>&1; do
+    if (( SECONDS >= deadline )); then
+      echo "SQL Server did not accept local connections within 300 seconds. Recent service status follows."
+      systemctl status mssql-server --no-pager || true
+      journalctl -u mssql-server -n 120 --no-pager || true
+      return 1
+    fi
+    sleep 5
+  done
+}
 configure_sql(){
   local sqlcmd pass port max_mem
   sqlcmd="$(sqlcmd_path)"; pass="$(sa_password)"; port="$(json "$cfg.port")"; max_mem="$(json "$cfg.maxMemoryMb")"
+  echo "Configuring SQL Server TCP port, Agent setting, contained database authentication, and max memory."
   /opt/mssql/bin/mssql-conf set network.tcpport "$port"
   /opt/mssql/bin/mssql-conf set sqlagent.enabled "$(json "$cfg.enableAgent")"
-  systemctl restart mssql-server
-  "$sqlcmd" -S "localhost,$port" -U sa -P "$pass" -C -Q "EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'contained database authentication', 1; RECONFIGURE; EXEC sp_configure 'max server memory (MB)', $max_mem; RECONFIGURE;" >/dev/null
+  timeout 180 systemctl restart mssql-server
+  wait_for_sqlserver
+  SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -l 30 -Q "EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'contained database authentication', 1; RECONFIGURE; EXEC sp_configure 'max server memory (MB)', $max_mem; RECONFIGURE;" >/dev/null
 }
 main(){
   validate_password
@@ -28,9 +44,11 @@ main(){
     printf "MSSQL_SA_PASSWORD='%s'\n" "$(sa_password | sed "s/'/'\\''/g")"
   } > "$envfile"
   set -a; source "$envfile"; set +a
-  /opt/mssql/bin/mssql-conf -n setup >/dev/null
+  echo "Running unattended SQL Server setup."
+  timeout 900 /opt/mssql/bin/mssql-conf -n setup >/dev/null
   rm -f "$envfile"
-  systemctl enable --now mssql-server
+  timeout 180 systemctl enable --now mssql-server
+  wait_for_sqlserver
   configure_sql
 }
 main "$@"

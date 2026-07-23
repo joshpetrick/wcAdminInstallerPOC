@@ -28,7 +28,10 @@ Describe 'SQL Server provider package generation' {
     $install | Should -Match 'ACCEPT_EULA=Y'
     $install | Should -Not -Match 'xargs'
     $configure | Should -Match 'MSSQL_SA_PASSWORD'
-    $configure | Should -Not -Match 'SA_PASSWORD='
+    $configure | Should -Match 'wait_for_sqlserver'
+    $configure | Should -Match 'timeout 900'
+    $configure | Should -Match 'SQLCMDPASSWORD'
+    $configure | Should -Not -Match '(^|[^A-Z_])SA_PASSWORD='
     $validate | Should -Match "SERVERPROPERTY\('ProductVersion'\)"
     $validate | Should -Match 'FoundationValidation'
   }

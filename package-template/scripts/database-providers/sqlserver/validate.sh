@@ -12,19 +12,19 @@ main(){
   systemctl is-enabled mssql-server >/dev/null
   systemctl is-active --quiet mssql-server
   ss -ltn | grep -q ":$port "
-  metadata="$($sqlcmd -S "localhost,$port" -U sa -P "$pass" -C -h -1 -W -s '|' -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(128)), CAST(SERVERPROPERTY('ProductLevel') AS nvarchar(128)), CAST(SERVERPROPERTY('Edition') AS nvarchar(128)), CAST(SERVERPROPERTY('EngineEdition') AS nvarchar(128));")"
+  metadata="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -h -1 -W -s '|' -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(128)), CAST(SERVERPROPERTY('ProductLevel') AS nvarchar(128)), CAST(SERVERPROPERTY('Edition') AS nvarchar(128)), CAST(SERVERPROPERTY('EngineEdition') AS nvarchar(128));")"
   version="$(cut -d'|' -f1 <<<"$metadata")"; level="$(cut -d'|' -f2 <<<"$metadata")"; edition="$(cut -d'|' -f3 <<<"$metadata")"; engine="$(cut -d'|' -f4 <<<"$metadata")"
   [[ "$version" == 16.* ]]
   version_ge "$version" "$(json "$cfg.minimumProductVersion")"
   [[ "$edition" == *"$(json "$cfg.edition")"* ]]
-  contained="$($sqlcmd -S "localhost,$port" -U sa -P "$pass" -C -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'contained database authentication';")"
-  max_memory="$($sqlcmd -S "localhost,$port" -U sa -P "$pass" -C -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'max server memory (MB)';")"
+  contained="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'contained database authentication';")"
+  max_memory="$(SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -h -1 -W -Q "SET NOCOUNT ON; SELECT value_in_use FROM sys.configurations WHERE name = 'max server memory (MB)';")"
   agent_enabled="$(/opt/mssql/bin/mssql-conf get sqlagent.enabled | awk -F= '{gsub(/[[:space:]]/,"",$2); print $2}')"
   [[ "$contained" == "1" ]]
   [[ "$max_memory" == "$(json "$cfg.maxMemoryMb")" ]]
   [[ "$(json "$cfg.enableAgent")" != "true" || "$agent_enabled" == "true" ]]
-  "$sqlcmd" -S "localhost,$port" -U sa -P "$pass" -C -Q "CREATE DATABASE FoundationValidation; ALTER DATABASE FoundationValidation SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE FoundationValidation;" >/dev/null
-  ! "$sqlcmd" -S "localhost,$port" -U sa -P "$pass" -C -h -1 -Q "SELECT name FROM sys.databases WHERE name='FoundationValidation';" | grep -q FoundationValidation
+  SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -Q "CREATE DATABASE FoundationValidation; ALTER DATABASE FoundationValidation SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE FoundationValidation;" >/dev/null
+  ! SQLCMDPASSWORD="$pass" "$sqlcmd" -S "localhost,$port" -U sa -C -h -1 -Q "SELECT name FROM sys.databases WHERE name='FoundationValidation';" | grep -q FoundationValidation
   package="$(rpm -q mssql-server)"
   os_pretty=$(jq -r '.prettyName' "$VALIDATION/os-release.json")
   os_version=$(jq -r '.versionId' "$VALIDATION/os-release.json")

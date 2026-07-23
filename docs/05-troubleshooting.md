@@ -113,6 +113,28 @@ What to do:
 2. If pinned, update the pinned SQL Server package to CU10 or later.
 3. Clean and rebuild so the VM installs the corrected package.
 
+
+## Stage 04 appears to stop after `SQL Server needs to be restarted`
+
+Meaning: SQL Server accepted configuration changes, then the build waited during service restart or during the first local `sqlcmd` connection. Older packages did not print a heartbeat or timeout around that wait.
+
+What to do:
+
+1. Regenerate the package so stage 04 uses explicit setup/restart timeouts and prints service diagnostics if SQL Server does not accept local connections.
+2. Resume the build if SQL Server setup was still healthy:
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+3. If the stage fails again, inspect the service from the build directory:
+
+```powershell
+vagrant ssh
+sudo systemctl status mssql-server --no-pager
+sudo journalctl -u mssql-server -n 200 --no-pager
+```
+
 ## SQL Server service does not start or port 1433 is not listening
 
 Meaning: `mssql-server` did not become healthy after setup/configuration.
