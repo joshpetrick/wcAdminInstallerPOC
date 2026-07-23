@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profileId", "displayName", "windchillVersion", "compatibilityStatus", "provider", "artifactVersion", "baseOperatingSystem", "vm", "java", "database", "paths"],
+  "properties": {
+    "profileId": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "windchillVersion": { "type": "string", "minLength": 1 },
+    "compatibilityStatus": { "const": "POC_NOT_CERTIFIED" },
+    "provider": { "const": "virtualbox" },
+    "artifactVersion": { "type": "string", "minLength": 1 },
+    "baseOperatingSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "majorVersion", "minimumMinorVersion", "allowLaterMinorVersions", "vagrantBox", "vagrantBoxVersion"],
+      "properties": {
+        "distribution": { "const": "AlmaLinux" },
+        "majorVersion": { "const": "9" },
+        "minimumMinorVersion": { "type": "integer", "minimum": 6 },
+        "allowLaterMinorVersions": { "type": "boolean" },
+        "vagrantBox": { "type": "string", "minLength": 1 },
+        "vagrantBoxVersion": { "type": "string" }
+      }
+    },
+    "vm": { "type": "object", "additionalProperties": true, "required": ["name", "hostname", "cpus", "memoryMb", "primaryDiskGb", "headless"] },
+    "java": { "type": "object", "additionalProperties": true, "required": ["vendor", "majorVersion", "installationDirectory", "javaHomeSymlink", "downloadAutomatically"] },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "profileId"],
+      "properties": {
+        "provider": { "enum": ["SQLSERVER", "ORACLE"] },
+        "profileId": { "type": "string", "minLength": 1 },
+        "sqlServer": { "$ref": "#/$defs/sqlServer" },
+        "oracle": { "$ref": "#/$defs/oracle" }
+      },
+      "allOf": [
+        { "if": { "properties": { "provider": { "const": "SQLSERVER" } } }, "then": { "required": ["sqlServer"], "not": { "required": ["oracle"] } } },
+        { "if": { "properties": { "provider": { "const": "ORACLE" } } }, "then": { "required": ["oracle"], "not": { "required": ["sqlServer"] } } }
+      ]
+    },
+    "paths": { "type": "object", "additionalProperties": false, "required": ["defaultHostRoot", "mediaDirectory", "cacheDirectory", "buildDirectory", "outputDirectory", "mockRepositoryDirectory"] }
+  },
+  "$defs": {
+    "sqlServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["majorVersion", "edition", "installationSource", "repositoryPlatform", "repositoryMajorVersion", "packageVersionPolicy", "pinnedPackageVersion", "minimumProductVersion", "port", "enableAgent", "enableContainedDatabaseAuthentication", "createWindchillDatabase", "maxMemoryMb", "dataDirectory", "logDirectory", "backupDirectory"],
+      "properties": {
+        "majorVersion": { "const": "2022" },
+        "edition": { "enum": ["Developer"] },
+        "installationSource": { "const": "MICROSOFT_PACKAGE_REPOSITORY" },
+        "repositoryPlatform": { "const": "rhel" },
+        "repositoryMajorVersion": { "const": 9 },
+        "packageVersionPolicy": { "enum": ["LATEST_AVAILABLE", "PINNED"] },
+        "pinnedPackageVersion": { "type": "string" },
+        "minimumProductVersion": { "type": "string", "pattern": "^16\\.0\\.(41[0-9][0-9]|[5-9][0-9]{3}|[1-9][0-9]{4,})\\.[0-9]+$" },
+        "port": { "const": 1433 },
+        "enableAgent": { "type": "boolean" },
+        "enableContainedDatabaseAuthentication": { "type": "boolean" },
+        "createWindchillDatabase": { "const": false },
+        "maxMemoryMb": { "type": "integer", "minimum": 1024 },
+        "dataDirectory": { "type": "string" },
+        "logDirectory": { "type": "string" },
+        "backupDirectory": { "type": "string" }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["status", "reason"],
+      "properties": { "status": { "const": "DISABLED_FOR_CURRENT_POC" }, "reason": { "type": "string", "minLength": 1 } }
+    }
+  }
+}

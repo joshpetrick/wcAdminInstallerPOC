@@ -1,0 +1,24 @@
+require 'json'
+cfg = JSON.parse(File.read(File.join(__dir__, 'config.json')))['profile']
+disk_size = "#{cfg['vm']['primaryDiskGb']}GB"
+provider = cfg['database']['provider']
+raise "Unsupported database provider: #{provider}" unless ['SQLSERVER', 'ORACLE'].include?(provider)
+raise 'ORACLE provider is disabled for the current POC. Use SQLSERVER unless a future Oracle profile explicitly enables approved Oracle RU media.' if provider == 'ORACLE'
+
+Vagrant.configure('2') do |config|
+  config.vm.box = cfg['baseOperatingSystem']['vagrantBox']
+  config.vm.box_version = cfg['baseOperatingSystem']['vagrantBoxVersion'] unless cfg['baseOperatingSystem']['vagrantBoxVersion'].to_s.empty?
+  config.vm.hostname = cfg['vm']['hostname']
+  config.vm.boot_timeout = 1800
+  config.vm.disk :disk, size: disk_size, primary: true
+  config.vm.provider 'virtualbox' do |vb|
+    vb.name = cfg['vm']['name']
+    vb.cpus = cfg['vm']['cpus']
+    vb.memory = cfg['vm']['memoryMb']
+    vb.gui = !cfg['vm']['headless']
+  end
+  config.vm.synced_folder '.', '/vagrant', type: 'virtualbox', SharedFoldersEnableSymlinksCreate: false
+  ['01-prepare-linux','02-install-java','03-install-database','04-configure-database','05-validate-database','07-sanitize-foundation','08-validate-foundation'].each do |s|
+    config.vm.provision "shell", path: "scripts/#{s}.sh", privileged: true
+  end
+end
