@@ -45,6 +45,8 @@ Describe 'Documentation entry points' {
     $readme | Should -Match 'docs/02-admin-build-procedure.md'
     $readme | Should -Match 'docs/03-box-usage-and-ssh.md'
     $readme | Should -Match 'Clean-Foundation-Build.ps1'
+    $readme | Should -Match 'Prerequisites summary'
+    $readme | Should -Match 'VBoxManage'
   }
 
   It 'generated package README preserves cleanup and resume instructions' {
@@ -52,5 +54,7 @@ Describe 'Documentation entry points' {
     $packageReadme | Should -Match 'Start-Foundation-Build.ps1'
     $packageReadme | Should -Match 'Resume-Foundation-Build.ps1'
     $packageReadme | Should -Match 'Clean-Foundation-Build.ps1'
+    $packageReadme | Should -Match 'Prerequisites on the Windows build host'
+    $packageReadme | Should -Match '12 characters'
   }
 }

@@ -9,6 +9,7 @@ Describe 'Git independence' {
     $text = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Test-Prerequisites.ps1')
     $text | Should -Not -Match 'git(\.exe)?'
     $text | Should -Match 'VBoxManage'
+    $text | Should -Match 'Program Files\\Oracle\\VirtualBox'
     $text | Should -Match 'vagrant'
     $text | Should -Match 'PowerShell 7'
   }

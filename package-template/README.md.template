@@ -6,10 +6,22 @@ This generated package targets the `SQLSERVER` database provider: AlmaLinux 9, A
 
 Use this file as the entry point inside the generated package. The source repository has longer chapters under `docs/`; this generated package intentionally includes the runnable commands and recovery steps needed by the Admin build operator.
 
+## Prerequisites on the Windows build host
+
+Install PowerShell 7.x, Vagrant, and Oracle VirtualBox 7.x. Vagrant and VirtualBox are separate installs; `vagrant --version` can succeed while `VBoxManage` is still missing. Verify with:
+
+```powershell
+pwsh --version
+vagrant --version
+VBoxManage --version
+```
+
+If `VBoxManage` is not on `PATH`, the prerequisite checker also looks for `C:\Program Files\Oracle\VirtualBox\VBoxManage.exe`.
+
 ## Quick start
 
 1. Copy `secrets.example.json` to `secrets.json`.
-2. Populate `database.sqlServer.saPassword` with a strong SQL Server SA password.
+2. Populate `database.sqlServer.saPassword` with a strong SQL Server SA password: at least 12 characters with uppercase, lowercase, number, and symbol characters.
 3. Run `pwsh .\Start-Foundation-Build.ps1`.
 4. If the build fails after a VM has been created, correct the issue and run the resume command printed in the error output: `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'`.
 5. If the VM should be discarded, run the cleanup command printed in the error output: `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'`.

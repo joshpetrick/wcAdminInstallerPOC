@@ -7,7 +7,7 @@ function Assert-Secrets($s) {
   if ($s.database.provider -ne 'SQLSERVER') { throw 'secrets.json must declare database.provider SQLSERVER.' }
   $p = [string]$s.database.sqlServer.saPassword
   if ([string]::IsNullOrWhiteSpace($p) -or $p -in @('CHANGE_ME','Password123','')) { throw "Secret value 'database.sqlServer.saPassword' must be populated in secrets.json." }
-  if ($p.Length -lt 8 -or $p -notmatch '[A-Z]' -or $p -notmatch '[a-z]' -or $p -notmatch '[0-9]' -or $p -notmatch '[^A-Za-z0-9]') { throw 'SQL Server SA password must satisfy complexity requirements.' }
+  if ($p.Length -lt 12 -or $p -notmatch '[A-Z]' -or $p -notmatch '[a-z]' -or $p -notmatch '[0-9]' -or $p -notmatch '[^A-Za-z0-9]') { throw 'SQL Server SA password must be at least 12 characters and include uppercase, lowercase, numeric, and symbol characters. Avoid dictionary words and the username sa.' }
 }
 function Copy-PackageToBuildDirectory([string]$SourceDirectory,[string]$DestinationDirectory) {
   New-Item -ItemType Directory -Force -Path $DestinationDirectory | Out-Null

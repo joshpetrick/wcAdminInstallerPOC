@@ -27,6 +27,23 @@ Use this README as the starting point for the POC. The sections below summarize 
 
 `Clean-Foundation-Build.ps1` is the supported cleanup entry point for failed or unwanted build VMs. Prefer it over manually deleting build folders because it runs `vagrant destroy -f` before removing files.
 
+
+## Prerequisites summary
+
+Before running a generated SQL Server foundation package on Windows, install:
+
+| Software/configuration | Why it is needed | Verify with |
+| --- | --- | --- |
+| PowerShell 7.x | Runs generator and package launchers | `pwsh --version` |
+| Vagrant CLI | Creates, provisions, and packages the VM | `vagrant --version` |
+| Oracle VirtualBox 7.x | Provides the VirtualBox VM provider and `VBoxManage` | `VBoxManage --version` or `& 'C:\Program Files\Oracle\VirtualBox\VBoxManage.exe' --version` |
+| Hardware virtualization | Required for the VM to boot reliably | BIOS/UEFI VT-x or AMD-V enabled |
+| Internet/repository access | Guest downloads AlmaLinux updates, Corretto, and SQL Server from package repositories | Confirm HTTPS/proxy access to required repositories |
+
+Vagrant does not include VirtualBox. If the prerequisite check says `VBoxManage` was not found, install VirtualBox or add the VirtualBox install directory to `PATH`.
+
+The only file the operator must configure in the generated package is `secrets.json`, created from `secrets.example.json`. For SQL Server, set `database.sqlServer.saPassword` to a strong password with at least 12 characters containing uppercase, lowercase, number, and symbol characters.
+
 ## Active POC target
 
 | Area | Value |

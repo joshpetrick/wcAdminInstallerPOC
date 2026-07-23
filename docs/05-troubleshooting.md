@@ -1,17 +1,112 @@
 # Troubleshooting
 
+Use the log command printed by `Start-Foundation-Build.ps1` first:
+
+```powershell
+Get-Content -Path '<build-dir>\build.log' -Tail 200
+```
+
+After applying a fix, use the printed resume command unless the fix requires a fresh VM. Use cleanup when the VM is in an unknown state.
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+## `VBoxManage` was not found
+
+Meaning: Vagrant is installed, but the VirtualBox CLI is not installed or is not discoverable. Vagrant and VirtualBox are separate products.
+
+What to do:
+
+1. Install Oracle VirtualBox 7.x.
+2. Close and reopen PowerShell.
+3. Verify one of these commands works:
+
+```powershell
+VBoxManage --version
+& 'C:\Program Files\Oracle\VirtualBox\VBoxManage.exe' --version
+```
+
+If the second command works but the first does not, add the VirtualBox install directory to the Windows `PATH`, or rely on the updated prerequisite checker which looks in the default install location.
+
+## SQL Server SA password is rejected
+
+Meaning: SQL Server rejected the configured `database.sqlServer.saPassword` during unattended setup, or the launcher rejected it before setup.
+
+What to do:
+
+1. Open `secrets.json` in the extracted package directory.
+2. Set `database.sqlServer.saPassword` to a value with at least 12 characters.
+3. Include uppercase, lowercase, numeric, and symbol characters.
+4. Avoid dictionary words, `sa`, company names, and placeholders.
+5. Rerun the start or resume command.
+
+Example shape, not a password recommendation:
+
+```json
+{
+  "database": {
+    "provider": "SQLSERVER",
+    "sqlServer": {
+      "saPassword": "<12+ chars with upper/lower/number/symbol>"
+    }
+  }
+}
+```
+
+The password is passed to SQL Server setup through `MSSQL_SA_PASSWORD` in a protected temporary environment file and is removed after setup. Do not paste real passwords into support tickets or logs.
+
 ## SQL Server repository access fails
 
-The SQL Server provider checks Microsoft package endpoints before installing packages. DNS, HTTPS inspection, proxy requirements, repository outages, package unavailability, or certificate problems must be fixed before stage 03 can continue.
+Meaning: the guest VM cannot reach Microsoft package endpoints before stage 03 installs SQL Server.
+
+What to do:
+
+1. Confirm the host network allows HTTPS access.
+2. If your organization requires a proxy, configure Vagrant/guest proxy handling before retrying.
+3. Check DNS and TLS inspection policies.
+4. Retry with:
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+## SQL Server package is unavailable
+
+Meaning: Microsoft repository metadata was reachable, but DNF could not find `mssql-server` or `mssql-tools18`.
+
+What to do:
+
+1. Confirm the active profile uses `repositoryPlatform: rhel` and `repositoryMajorVersion: 9`.
+2. If using `packageVersionPolicy: PINNED`, verify `pinnedPackageVersion` exactly matches an available package version.
+3. Retry after repository availability is restored.
 
 ## SQL Server version is below CU10
 
-SQL Server 2022 support on RHEL 9 begins with CU10. The provider queries `SERVERPROPERTY('ProductVersion')` and fails if the effective product version is below `16.0.4100.1`.
+Meaning: SQL Server installed, but `SERVERPROPERTY('ProductVersion')` is lower than the profile minimum `16.0.4100.1`.
 
-## SA password is rejected
+What to do:
 
-Populate `database.sqlServer.saPassword` in `secrets.json`. It must not be empty or a placeholder and must satisfy SQL Server complexity rules. The password is passed to setup through `MSSQL_SA_PASSWORD` in a protected temporary environment file that is deleted after setup.
+1. Keep `packageVersionPolicy: LATEST_AVAILABLE` for the POC unless a pinned version has been approved.
+2. If pinned, update the pinned SQL Server package to CU10 or later.
+3. Clean and rebuild so the VM installs the corrected package.
+
+## SQL Server service does not start or port 1433 is not listening
+
+Meaning: `mssql-server` did not become healthy after setup/configuration.
+
+What to do from the build directory:
+
+```powershell
+vagrant ssh
+sudo systemctl status mssql-server --no-pager
+sudo journalctl -u mssql-server -n 200 --no-pager
+sudo ss -ltnp | grep 1433
+```
+
+Correct the root cause, then resume if the VM is still healthy. If SQL Server setup partially completed with bad configuration or credentials, clean and rebuild.
 
 ## Oracle media errors
 
-The active SQL Server package should not check for Oracle media. If a generated SQL Server package asks for `LINUX.X64_193000_db_home.zip`, regenerate from `profiles/windchill-13.1.2-sqlserver.json`.
+The active SQL Server package should not check for Oracle media. If a generated SQL Server package asks for `LINUX.X64_193000_db_home.zip`, regenerate from `profiles/windchill-13.1.2-sqlserver.json` and confirm the generated package name contains `sqlserver`.

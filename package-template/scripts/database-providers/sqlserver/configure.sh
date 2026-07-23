@@ -7,7 +7,7 @@ validate_password(){
   local p; p="$(sa_password)"
   [[ "$(secret_json '.database.provider')" == SQLSERVER ]]
   [[ -n "$p" && "$p" != "CHANGE_ME" && "$p" != "Password123" ]]
-  [[ ${#p} -ge 8 && "$p" =~ [A-Z] && "$p" =~ [a-z] && "$p" =~ [0-9] && "$p" =~ [^A-Za-z0-9] ]] || { echo "SQL Server saPassword must meet SQL Server complexity requirements."; return 1; }
+  [[ ${#p} -ge 12 && "$p" =~ [A-Z] && "$p" =~ [a-z] && "$p" =~ [0-9] && "$p" =~ [^A-Za-z0-9] ]] || { echo "SQL Server saPassword must be at least 12 characters and include uppercase, lowercase, numeric, and symbol characters. Avoid dictionary words and the username sa."; return 1; }
 }
 configure_sql(){
   local sqlcmd pass port max_mem
