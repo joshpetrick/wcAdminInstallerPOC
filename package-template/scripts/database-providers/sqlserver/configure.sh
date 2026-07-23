@@ -24,10 +24,15 @@ wait_for_sqlserver(){
   done
 }
 configure_sql(){
-  local sqlcmd pass port max_mem
+  local sqlcmd pass port max_mem current_port
   sqlcmd="$(sqlcmd_path)"; pass="$(sa_password)"; port="$(json "$cfg.port")"; max_mem="$(json "$cfg.maxMemoryMb")"
   echo "Configuring SQL Server TCP port, Agent setting, contained database authentication, and max memory."
-  /opt/mssql/bin/mssql-conf set network.tcpport "$port"
+  current_port="$(/opt/mssql/bin/mssql-conf get network.tcpport 2>/dev/null | awk -F= '{gsub(/[[:space:]]/,"",$2); print $2}')"
+  if [[ "$current_port" == "$port" ]] || { [[ -z "$current_port" ]] && [[ "$port" == "1433" ]] && ss -ltn | grep -q ":$port "; }; then
+    echo "SQL Server is already using TCP port $port; skipping mssql-conf network.tcpport set."
+  else
+    /opt/mssql/bin/mssql-conf set network.tcpport "$port"
+  fi
   /opt/mssql/bin/mssql-conf set sqlagent.enabled "$(json "$cfg.enableAgent")"
   timeout 180 systemctl restart mssql-server
   wait_for_sqlserver

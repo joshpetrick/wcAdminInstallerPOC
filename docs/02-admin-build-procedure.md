@@ -71,4 +71,23 @@ pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 
 `Clean-Foundation-Build.ps1` is preferred over manual deletion because it invokes Vagrant destruction before removing build files.
 
+## 6. Where logs are stored
+
+The build creates a Windows-side build log and Linux guest stage logs. Start with the Windows log:
+
+```powershell
+Get-Content -Path '<build-dir>\build.log' -Tail 200
+```
+
+For deeper diagnostics, SSH into the build VM from the build directory and inspect the stage logs:
+
+```powershell
+cd '<build-dir>'
+vagrant ssh
+sudo ls -lh /var/lib/windchill-foundation/logs
+sudo tail -n 200 /var/lib/windchill-foundation/logs/04-configure-database.log
+sudo tail -n 200 /var/lib/windchill-foundation/logs/05-validate-database.log
+sudo journalctl -u mssql-server -n 200 --no-pager
+```
+
 Do not claim a completed integration build unless Vagrant, VirtualBox, Microsoft repository access, and the full VM flow actually ran.

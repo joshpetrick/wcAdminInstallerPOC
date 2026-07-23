@@ -13,6 +13,24 @@ pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 ```
 
+
+## How to access detailed guest logs
+
+The Windows `build.log` captures Vagrant output, but each Linux stage also writes a detailed guest log under `/var/lib/windchill-foundation/logs`. From the generated package or build directory, use:
+
+```powershell
+Get-Content -Path '<build-dir>\build.log' -Tail 200
+cd '<build-dir>'
+vagrant ssh
+sudo ls -lh /var/lib/windchill-foundation/logs
+sudo tail -n 200 /var/lib/windchill-foundation/logs/04-configure-database.log
+sudo tail -n 200 /var/lib/windchill-foundation/logs/05-validate-database.log
+sudo systemctl status mssql-server --no-pager
+sudo journalctl -u mssql-server -n 200 --no-pager
+```
+
+If SSH cannot connect, the VM may still be booting or Vagrant may have stopped the run after a provisioning error. Re-run `vagrant ssh` from the build directory after the prompt returns.
+
 ## `VBoxManage` was not found
 
 Meaning: Vagrant is installed, but the VirtualBox CLI is not installed or is not discoverable. Vagrant and VirtualBox are separate products.
@@ -114,13 +132,13 @@ What to do:
 3. Clean and rebuild so the VM installs the corrected package.
 
 
-## Stage 04 appears to stop after `SQL Server needs to be restarted`
+## Stage 04 reports `Port '1433' is already in use` or appears to stop after restart messages
 
-Meaning: SQL Server accepted configuration changes, then the build waited during service restart or during the first local `sqlcmd` connection. Older packages did not print a heartbeat or timeout around that wait.
+Meaning: SQL Server setup already started on the default port, so setting `network.tcpport` to `1433` can report that the port is in use. The updated configuration script treats an already-listening default 1433 as acceptable and skips the redundant port set. If the build appears stopped after restart messages, it is waiting during service restart or the first local `sqlcmd` connection.
 
 What to do:
 
-1. Regenerate the package so stage 04 uses explicit setup/restart timeouts and prints service diagnostics if SQL Server does not accept local connections.
+1. Regenerate the package so stage 04 skips redundant port setting, uses explicit setup/restart timeouts, and prints service diagnostics if SQL Server does not accept local connections.
 2. Resume the build if SQL Server setup was still healthy:
 
 ```powershell
