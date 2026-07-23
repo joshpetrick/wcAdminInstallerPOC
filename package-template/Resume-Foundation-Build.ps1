@@ -9,9 +9,11 @@ $ErrorActionPreference = 'Stop'
 Push-Location $BuildDirectory
 try {
   vagrant provision
-  if ($LASTEXITCODE) {
-    exit $LASTEXITCODE
-  }
+  if ($LASTEXITCODE) { exit $LASTEXITCODE }
+  vagrant reload --force
+  if ($LASTEXITCODE) { exit $LASTEXITCODE }
+  vagrant ssh -c 'sudo /vagrant/scripts/06-reboot-validation.sh'
+  if ($LASTEXITCODE) { exit $LASTEXITCODE }
 } finally {
   Pop-Location
 }

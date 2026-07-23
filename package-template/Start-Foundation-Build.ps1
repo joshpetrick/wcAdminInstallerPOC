@@ -9,6 +9,14 @@ function Assert-Secrets($s) {
   if ([string]::IsNullOrWhiteSpace($p) -or $p -in @('CHANGE_ME','Password123','')) { throw "Secret value 'database.sqlServer.saPassword' must be populated in secrets.json." }
   if ($p.Length -lt 12 -or $p -notmatch '[A-Z]' -or $p -notmatch '[a-z]' -or $p -notmatch '[0-9]' -or $p -notmatch '[^A-Za-z0-9]') { throw 'SQL Server SA password must be at least 12 characters and include uppercase, lowercase, numeric, and symbol characters. Avoid dictionary words and the username sa.' }
 }
+
+function Invoke-RebootValidation([string]$LogPath) {
+  Write-Host 'Running Vagrant-managed reboot validation after provisioning.'
+  & vagrant reload --force *>&1 | Tee-Object -FilePath $LogPath -Append
+  if ($LASTEXITCODE) { throw 'vagrant reload --force failed during reboot validation' }
+  & vagrant ssh -c 'sudo /vagrant/scripts/06-reboot-validation.sh' *>&1 | Tee-Object -FilePath $LogPath -Append
+  if ($LASTEXITCODE) { throw 'post-reboot foundation validation failed' }
+}
 function Copy-PackageToBuildDirectory([string]$SourceDirectory,[string]$DestinationDirectory) {
   New-Item -ItemType Directory -Force -Path $DestinationDirectory | Out-Null
   Get-ChildItem -LiteralPath $SourceDirectory -Force | Where-Object { $_.Name -notin @('.vagrant') } | Copy-Item -Recurse -Force -Destination $DestinationDirectory
@@ -28,6 +36,7 @@ Push-Location $work
 try {
   & vagrant up --provider=virtualbox *>&1 | Tee-Object -FilePath $log
   if ($LASTEXITCODE) { throw 'vagrant up failed' }
+  Invoke-RebootValidation -LogPath $log
   & vagrant halt
   $versionLabel = $p.windchillVersion.Substring(0,6)
   $boxName = "wc-$versionLabel-foundation-alma9-sqlserver2022-virtualbox-$($p.artifactVersion).box"

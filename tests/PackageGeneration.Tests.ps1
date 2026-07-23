@@ -13,6 +13,7 @@ Describe 'SQL Server provider package generation' {
       Test-Path (Join-Path $pkg.FullName 'scripts/database-providers/oracle/response-templates') | Should -BeFalse
       (Get-Content -Raw (Join-Path $pkg.FullName 'Vagrantfile')) | Should -Not -Match 'Oracle installer was not found'
       (Get-Content -Raw (Join-Path $pkg.FullName 'config.json')) | Should -Match '"provider":\s*"SQLSERVER"'
+      (Get-Content -Raw (Join-Path $pkg.FullName 'Vagrantfile')) | Should -Not -Match "inline: 'reboot'"
     } finally { Remove-Item -Recurse -Force -LiteralPath $out -ErrorAction SilentlyContinue }
   }
 
@@ -21,6 +22,7 @@ Describe 'SQL Server provider package generation' {
     $install = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/database-providers/sqlserver/install.sh')
     $configure = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/database-providers/sqlserver/configure.sh')
     $validate = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/scripts/database-providers/sqlserver/validate.sh')
+    $start = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Start-Foundation-Build.ps1')
     $common | Should -Match 'dispatch_provider'
     $install | Should -Match 'mssql-server-2022.repo'
     $install | Should -Match 'mssql-tools18'
@@ -41,6 +43,8 @@ Describe 'SQL Server provider package generation' {
     $validate | Should -Match 'SQL Server Agent expected true'
     $validate | Should -Match 'Agent XPs'
     $validate | Should -Match 'No setting for the given option'
+    $start | Should -Match 'Invoke-RebootValidation'
+    $start | Should -Match 'vagrant reload --force'
   }
 
   It 'active SQL Server scripts contain no Oracle installer commands' {

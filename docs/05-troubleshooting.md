@@ -241,3 +241,23 @@ pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 ```
 
 For the normal POC path, prefer a clean rebuild with the regenerated package so the final `.box` is produced only from scripted configuration.
+
+## Failure after stage 08 before packaging: guest not ready for inline reboot
+
+Meaning: provisioning completed through SQL Server validation and sanitization, but the old Vagrantfile attempted an additional inline guest reboot as a shell provisioner. After sanitization, guest identity cleanup can make that inline guest-operation path fragile even though the VM itself is healthy.
+
+What changed: reboot persistence is now orchestrated from `Start-Foundation-Build.ps1` with `vagrant reload --force`, followed by an explicit SSH call to `scripts/06-reboot-validation.sh`. This keeps the reboot validation requirement but avoids the fragile inline reboot provisioner.
+
+What to do:
+
+1. Regenerate the Admin package from the updated repository.
+2. Prefer a clean rebuild so the generated Vagrantfile no longer contains `inline: 'reboot'`.
+3. If investigating the existing VM, run these commands from its build directory:
+
+```powershell
+vagrant status
+vagrant reload --force
+vagrant ssh -c 'sudo /vagrant/scripts/06-reboot-validation.sh'
+```
+
+If those commands pass, the SQL Server foundation itself is healthy; the failure was in the old host-side reboot orchestration.

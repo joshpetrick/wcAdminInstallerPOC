@@ -21,6 +21,4 @@ Vagrant.configure('2') do |config|
   ['01-prepare-linux','02-install-java','03-install-database','04-configure-database','05-validate-database','07-sanitize-foundation','08-validate-foundation'].each do |s|
     config.vm.provision "shell", path: "scripts/#{s}.sh", privileged: true
   end
-  config.vm.provision 'shell', inline: 'reboot', privileged: true, reboot: true
-  config.vm.provision 'shell', path: 'scripts/06-reboot-validation.sh', privileged: true
 end
