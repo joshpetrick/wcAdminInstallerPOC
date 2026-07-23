@@ -42,8 +42,9 @@ main(){
   curl --fail --silent --show-error --location https://packages.microsoft.com/config/rhel/9/prod.repo -o /etc/yum.repos.d/msprod.repo
   install_sqlserver_package
   install_sql_tools
-  sqlcmd_path >/dev/null
-  sqlcmd_path | xargs -I{} {} -? >/dev/null
+  local sqlcmd
+  sqlcmd="$(sqlcmd_path)"
+  "$sqlcmd" -? >/dev/null
   rpm -q mssql-server > "$VALIDATION/mssql-server-package-version.txt"
   rpm -q unixODBC unixODBC-devel mssql-tools18 > "$VALIDATION/mssql-tools-package-versions.txt"
 }

@@ -26,6 +26,7 @@ Describe 'SQL Server provider package generation' {
     $install | Should -Match 'mssql-tools18'
     $install | Should -Match '--allowerasing'
     $install | Should -Match 'ACCEPT_EULA=Y'
+    $install | Should -Not -Match 'xargs'
     $configure | Should -Match 'MSSQL_SA_PASSWORD'
     $configure | Should -Not -Match 'SA_PASSWORD='
     $validate | Should -Match "SERVERPROPERTY\('ProductVersion'\)"

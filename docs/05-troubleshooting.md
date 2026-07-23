@@ -89,6 +89,20 @@ pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 4. If using `packageVersionPolicy: PINNED`, verify `pinnedPackageVersion` exactly matches an available package version.
 5. If DNF still cannot resolve packages, clean the build and retry after repository availability is restored.
 
+
+## `xargs: {}: No such file or directory` after SQL tools install
+
+Meaning: SQL Server tools installed, but the old validation command attempted to launch `sqlcmd` through an unsafe `xargs` pattern.
+
+What to do:
+
+1. Regenerate the package so stage 03 resolves `sqlcmd` into a variable and executes that path directly.
+2. Resume the build because SQL Server setup has not started yet:
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
 ## SQL Server version is below CU10
 
 Meaning: SQL Server installed, but `SERVERPROPERTY('ProductVersion')` is lower than the profile minimum `16.0.4100.1`.
