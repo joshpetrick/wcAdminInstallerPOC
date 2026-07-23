@@ -24,6 +24,8 @@ Describe 'SQL Server provider package generation' {
     $common | Should -Match 'dispatch_provider'
     $install | Should -Match 'mssql-server-2022.repo'
     $install | Should -Match 'mssql-tools18'
+    $install | Should -Match '--allowerasing'
+    $install | Should -Match 'ACCEPT_EULA=Y'
     $configure | Should -Match 'MSSQL_SA_PASSWORD'
     $configure | Should -Not -Match 'SA_PASSWORD='
     $validate | Should -Match "SERVERPROPERTY\('ProductVersion'\)"

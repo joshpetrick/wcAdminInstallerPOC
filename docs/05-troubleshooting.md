@@ -72,15 +72,22 @@ What to do:
 pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
 ```
 
-## SQL Server package is unavailable
+## SQL Server package is unavailable or `unixODBC` conflicts
 
-Meaning: Microsoft repository metadata was reachable, but DNF could not find `mssql-server` or `mssql-tools18`.
+Meaning: Microsoft repository metadata was reachable, but DNF could not find `mssql-server`/`mssql-tools18`, or package resolution found a conflict such as `unixODBC-devel` requiring Microsoft's `unixODBC = 2.3.11` while AlmaLinux AppStream already selected a newer `unixODBC`.
 
 What to do:
 
-1. Confirm the active profile uses `repositoryPlatform: rhel` and `repositoryMajorVersion: 9`.
-2. If using `packageVersionPolicy: PINNED`, verify `pinnedPackageVersion` exactly matches an available package version.
-3. Retry after repository availability is restored.
+1. Regenerate the package so stage 03 uses the updated SQL tools install command with `--allowerasing`.
+2. Resume the same build if stage 03 failed before SQL Server setup started:
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+3. Confirm the active profile uses `repositoryPlatform: rhel` and `repositoryMajorVersion: 9`.
+4. If using `packageVersionPolicy: PINNED`, verify `pinnedPackageVersion` exactly matches an available package version.
+5. If DNF still cannot resolve packages, clean the build and retry after repository availability is restored.
 
 ## SQL Server version is below CU10
 
