@@ -1,21 +1,29 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": [
-    "status",
-    "startedAt",
-    "finishedAt",
-    "checks"
-  ],
+  "additionalProperties": true,
+  "required": ["status", "database", "checks"],
   "properties": {
-    "status": {
-      "enum": [
-        "PASS",
-        "FAIL"
-      ]
+    "status": { "enum": ["PASS", "FAIL"] },
+    "database": {
+      "type": "object",
+      "required": ["provider"],
+      "properties": {
+        "provider": { "enum": ["SQLSERVER", "ORACLE"] },
+        "resolvedProductVersion": { "type": "string" },
+        "resolvedEdition": { "type": "string" }
+      }
     },
     "checks": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "enum": ["PASS", "FAIL", "WARN"] }
+        }
+      }
     }
   }
 }

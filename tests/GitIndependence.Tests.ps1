@@ -8,9 +8,9 @@ Describe 'Git independence' {
   It 'prerequisite validation does not check Git' {
     $text = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'package-template/Test-Prerequisites.ps1')
     $text | Should -Not -Match 'git(\.exe)?'
-    $text | Should -Match 'VBoxManage\.exe'
-    $text | Should -Match 'vagrant\.exe'
-    $text | Should -Match 'pwsh\.exe'
+    $text | Should -Match 'VBoxManage'
+    $text | Should -Match 'vagrant'
+    $text | Should -Match 'PowerShell 7'
   }
 
   It 'package generation and generated runtime scripts do not invoke Git commands' {
@@ -27,15 +27,15 @@ Describe 'Git independence' {
 
   It 'README does not list Git as required Admin software' {
     $readme = Get-Content -Raw -LiteralPath (Join-Path $script:repoRoot 'README.md')
-    $readme | Should -Match 'Not required on Windows:[\s\S]*- Git'
-    $readme | Should -Not -Match 'Required on the Windows Admin build computer:[\s\S]*- Git[\s\S]*Admin media prerequisite:'
+    $readme | Should -Match 'without Git'
+    $readme | Should -Not -Match 'Git is required'
   }
 
   It '.gitignore remains present and protects sensitive/generated artifacts' {
     $ignorePath = Join-Path $script:repoRoot '.gitignore'
     Test-Path -LiteralPath $ignorePath | Should -BeTrue
     $ignore = Get-Content -Raw -LiteralPath $ignorePath
-    foreach ($pattern in @('secrets.json','LINUX.X64','*.box','*.vdi','.vagrant','*.zip','*.log','*.rsp')) {
+    foreach ($pattern in @('secrets.json','*.box','*.vdi','.vagrant','*.zip','*.log','*.rsp')) {
       $ignore | Should -Match ([regex]::Escape($pattern))
     }
   }

@@ -4,8 +4,10 @@ STATE=/var/lib/windchill-foundation
 STAGES=$STATE/stages
 LOGS=$STATE/logs
 VALIDATION=$STATE/validation
+MANIFEST=$STATE/foundation-manifest.json
 mkdir -p "$STAGES" "$LOGS" "$VALIDATION"
 CONFIG=/vagrant/config.json
+SECRETS=/vagrant/secrets.json
 stage_run(){
   local name="$1"; shift
   local marker="$STAGES/$name.done" log="$LOGS/$name.log" start end rc
@@ -26,4 +28,8 @@ stage_run(){
   echo "Finished $name" | tee -a "$log"
 }
 json(){ jq -r "$1" "$CONFIG"; }
-oracle_env(){ export ORACLE_BASE=$(json '.profile.oracle.oracleBase'); export ORACLE_HOME=$(json '.profile.oracle.oracleHome'); export PATH=$ORACLE_HOME/bin:$PATH; export ORACLE_SID=$(json '.profile.oracle.sid'); export CV_ASSUME_DISTID=$(json '.profile.oracle.assumedDistribution // "OEL7.8"'); }
+secret_json(){ jq -r "$1" "$SECRETS"; }
+database_provider(){ json '.profile.database.provider'; }
+provider_script(){ echo "/vagrant/scripts/database-providers/$(database_provider | tr '[:upper:]' '[:lower:]')/$1.sh"; }
+dispatch_provider(){ local action="$1" script; script="$(provider_script "$action")"; [[ -x "$script" ]] || { echo "Database provider $(database_provider) does not implement $action at $script"; return 1; }; "$script"; }
+sqlcmd_path(){ if [[ -x /opt/mssql-tools18/bin/sqlcmd ]]; then echo /opt/mssql-tools18/bin/sqlcmd; elif command -v sqlcmd >/dev/null 2>&1; then command -v sqlcmd; else return 1; fi; }

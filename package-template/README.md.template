@@ -1,52 +1,13 @@
-# Windchill Foundation Admin Build Package
+# Generated Windchill Foundation Admin Build Package
 
-This generated package is self-contained and does not require Git. Run it from this folder or from an extracted copy of the ZIP.
+This generated package targets the `SQLSERVER` database provider: AlmaLinux 9, Amazon Corretto Java from the selected profile, and Microsoft SQL Server 2022 Developer Edition installed from Microsoft's Linux package repositories.
 
 ## Quick start
 
-1. Confirm Oracle media exists at the host path configured in `config.json`.
-2. Run:
+1. Copy `secrets.example.json` to `secrets.json`.
+2. Populate `database.sqlServer.saPassword` with a strong SQL Server SA password.
+3. Run `pwsh .\Start-Foundation-Build.ps1`.
+4. Use `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` after correcting transient failures.
+5. Use `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` to destroy a failed build VM.
 
-   ```powershell
-   pwsh .\Start-Foundation-Build.ps1
-   ```
-
-3. On first run, populate the generated `secrets.json` and rerun the same command.
-4. If a stage fails, use the printed resume command:
-
-   ```powershell
-   pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-folder>'
-   ```
-
-5. To discard a failed build, use:
-
-   ```powershell
-   pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-folder>' -Force
-   ```
-
-## Successful output
-
-The launcher creates a timestamped build folder under the configured Windows build directory, usually:
-
-```text
-C:\WindchillFoundationPOC\Builds\<build-folder>
-```
-
-After successful provisioning, `vagrant package` creates the reusable `.box` in that build folder. Add the box to local Vagrant with:
-
-```powershell
-vagrant box add wc-foundation '<path-to-box>' --force
-```
-
-Then create a separate consumer folder with its own `Vagrantfile` and run `vagrant up`.
-
-## SSH
-
-From any folder containing the relevant `Vagrantfile`:
-
-```powershell
-vagrant ssh
-vagrant ssh-config
-```
-
-Use `vagrant ssh-config` for PuTTY host, port, user, and private-key settings. The default SSH user is `vagrant`; use `sudo su - oracle` inside Linux to become the Oracle OS user.
+Oracle media is not required for this SQL Server package. The Oracle provider is disabled for the current POC because it requires approved Oracle 19c RU and organization-provided patch media.

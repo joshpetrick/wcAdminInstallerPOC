@@ -1,25 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": [
-    "profileId",
-    "windchillVersion",
-    "compatibilityStatus",
-    "artifactVersion",
-    "provider",
-    "baseVagrantBox",
-    "linuxVersion",
-    "javaVersion",
-    "oracleVersion",
-    "oracleEdition",
-    "cdbName",
-    "pdbName",
-    "serviceName",
-    "vm",
-    "buildTimestamp",
-    "stageDurations",
-    "generatorVersion",
-    "artifactChecksumSha256",
-    "finalValidationStatus"
-  ]
+  "additionalProperties": true,
+  "required": ["database", "compatibilityStatus", "operatingSystem"],
+  "properties": {
+    "compatibilityStatus": { "const": "POC_NOT_CERTIFIED" },
+    "operatingSystem": { "type": "object", "required": ["distribution", "versionId"] },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "product", "edition", "platform", "configuredPort", "resolvedPackageVersion", "resolvedProductVersion", "resolvedProductLevel", "resolvedEdition", "validationStatus"],
+      "properties": {
+        "provider": { "enum": ["SQLSERVER", "ORACLE"] },
+        "product": { "type": "string" },
+        "edition": { "type": "string" },
+        "platform": { "type": "string" },
+        "configuredPort": { "type": "integer" },
+        "resolvedPackageVersion": { "type": "string" },
+        "resolvedProductVersion": { "type": "string" },
+        "resolvedProductLevel": { "type": "string" },
+        "resolvedEdition": { "type": "string" },
+        "engineEdition": { "type": "string" },
+        "validationStatus": { "enum": ["PASSED", "FAILED"] }
+      }
+    }
+  }
 }

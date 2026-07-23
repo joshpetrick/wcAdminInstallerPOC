@@ -7,8 +7,9 @@ if (Get-Module -ListAvailable -Name Pester) {
 } else {
   Write-Warning 'Pester is not installed; running built-in static smoke checks.'
   & $PSScriptRoot/Generate-Package.ps1 `
-    -ProfilePath $PSScriptRoot/profiles/windchill-12.1.2.json `
-    -OutputDirectory (Join-Path $env:TMP 'wc poc output')
+    -ProfilePath $PSScriptRoot/profiles/windchill-13.1.2-sqlserver.json `
+    -OutputDirectory (Join-Path $env:TMP 'wc poc output') `
+    -Force
 
   if ($LASTEXITCODE) {
     exit $LASTEXITCODE

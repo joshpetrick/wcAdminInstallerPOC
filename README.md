@@ -1,111 +1,92 @@
-# Windchill Foundation Image Builder POC
+# Windchill Admin Foundation Image Builder POC
 
-This repository contains the local Admin Image Builder proof of concept for creating a reusable VirtualBox foundation image for Windchill-compatible development work. The current checked-in profile targets **Windchill 12.1.2.0 compatibility** and builds an AlmaLinux 8 guest with Amazon Corretto 11 and Oracle Database 19c. Windchill itself is not installed by this POC.
+This repository contains a proof-of-concept Admin package generator for building reusable VirtualBox/Vagrant foundation images. The generated package is self-contained and can run without Git. The project now uses a **database-provider architecture** so the Admin profile selects a provider and the generated package includes only the provider implementation needed for that build.
 
-The project has two distinct parts:
+## Active POC target
 
-1. **Source repository**: templates, profiles, schemas, scripts, and tests used by maintainers.
-2. **Generated Admin build package**: a self-contained ZIP that an administrator runs on a Windows build computer with PowerShell 7, Vagrant, VirtualBox, and locally staged Oracle media.
-
-Git is useful for maintaining this repository, but Git is **not** required to run the generated Admin package.
-
-## Documentation map
-
-Use these chapters in order if you are new to Vagrant or to this build flow.
-
-| Chapter | Purpose |
+| Area | Value |
 | --- | --- |
-| [01 - Concepts and architecture](docs/01-concepts-and-architecture.md) | Explains what this POC does, what it does not do, and how repository, package, VM, and box artifacts relate. |
-| [02 - Admin build procedure](docs/02-admin-build-procedure.md) | Step-by-step package generation, secrets setup, build, resume, cleanup, and artifact collection. |
-| [03 - Box usage and SSH](docs/03-box-usage-and-ssh.md) | What to do after the `.box` is created, how to add/run it with Vagrant, how to SSH, and how to connect with PuTTY. |
-| [04 - Profiles and new Windchill versions](docs/04-profiles-and-new-windchill-versions.md) | How to clone the 12.1.2 profile for a future target such as 13.1.2 and which fields must change. |
-| [05 - Troubleshooting](docs/05-troubleshooting.md) | Known errors, stage failures, slow Oracle operations, DBCA warning completion, and recovery commands. |
-| [06 - Security and credentials](docs/06-security-and-credentials.md) | Credentials, Oracle media handling, generated secrets, SSH keys, and sanitization expectations. |
+| Windchill target | 13.1.2.0 |
+| OS | AlmaLinux 9, minimum 9.6, later 9.x allowed |
+| Database provider | `SQLSERVER` |
+| Database | Microsoft SQL Server 2022 Developer Edition on Linux |
+| Java | Profile-selected Amazon Corretto, currently 21 |
+| Hypervisor | VirtualBox |
+| Orchestration | Vagrant |
+| Compatibility status | `POC_NOT_CERTIFIED` |
 
-## Quick start for experienced admins
+AlmaLinux is used as a RHEL-compatible technical POC operating system. This repository does **not** represent AlmaLinux as Microsoft-certified or PTC-certified for this exact Windchill, SQL Server, and virtualization stack. Microsoft SQL Server release history documents that SQL Server 2022 support on RHEL 9 begins with CU10, so the active SQL Server profile requires product version `16.0.4100.1` or later. This POC is technical validation, not production certification.
 
-### 1. Stage Oracle media
-
-Download Oracle Database 19c Linux x86-64 media yourself and place it at the profile's configured media path:
-
-```text
-C:\WindchillFoundationPOC\Media\Oracle\LINUX.X64_193000_db_home.zip
-```
-
-The default expected SHA-256 is:
+## Architecture
 
 ```text
-ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8
+Admin foundation profile
+        ↓
+Database provider selection
+        ↓
+SQLSERVER provider
+        ↓
+Generated Admin build package
+        ↓
+Vagrant + VirtualBox
+        ↓
+AlmaLinux 9 + Java + SQL Server 2022 Developer
+        ↓
+Validation and sanitization
+        ↓
+Reusable VirtualBox .box
+        ↓
+Mock shared repository
 ```
 
-Oracle media is never committed to the repository and is not embedded in the generated Admin package ZIP.
+Future provider flow:
 
-### 2. Generate the Admin build package
+```text
+ORACLE provider
+    → requires Oracle base media, OPatch and approved RU
+
+SQLSERVER provider
+    → downloads packages from Microsoft repository
+```
+
+## Generate the Admin package
 
 ```powershell
-cd C:\Users\petri\IdeaProjects\wcAdminInstallerPOC
-pwsh
-
-.\Generate-Package.ps1 `
-    -ProfilePath .\profiles\windchill-12.1.2.json `
-    -OutputDirectory .\output `
-    -Force
+pwsh .\Generate-Package.ps1 -ProfilePath .\profiles\windchill-13.1.2-sqlserver.json -OutputDirectory .\output -Force
 ```
 
-Expected output includes:
+The generated ZIP is named like:
 
 ```text
-output\wc-12.1.2-foundation-build-0.1.0\
-output\wc-12.1.2-foundation-build-0.1.0.zip
-output\wc-12.1.2-foundation-build-0.1.0.zip.sha256
-output\wc-12.1.2-foundation-build-0.1.0-generation-report.json
+wc-13.1.2-foundation-build-sqlserver-0.1.0.zip
 ```
 
-### 3. Run the generated package
+## Run the SQL Server foundation build
+
+Extract the ZIP on the Windows build host, then run:
 
 ```powershell
-cd .\output\wc-12.1.2-foundation-build-0.1.0
-.\Start-Foundation-Build.ps1
+pwsh .\Start-Foundation-Build.ps1
 ```
 
-On first run the launcher creates `secrets.json` and stops. Populate the Oracle passwords in that file, then rerun:
+The first run creates `secrets.json`. Populate `database.sqlServer.saPassword` and rerun the command. SQL Server installation media does not need to be downloaded manually; SQL Server is installed from Microsoft's Linux repository inside the VM.
 
-```powershell
-.\Start-Foundation-Build.ps1
-```
+## What the foundation contains
 
-The build creates an isolated runtime folder under:
+The Admin foundation installs OS prerequisites, Java, SQL Server 2022 Developer Edition, SQL Server command-line tools, contained database authentication, SQL Server Agent where supported, port `1433`, and maximum SQL memory from the profile. Windchill is not installed and no Windchill database/users/schema are created. A later Developer workflow will create the Windchill database through PSI or provider-specific Developer automation.
+
+## Provider behavior
+
+Provider selection is data-driven by `profile.database.provider`. The future Admin application may expose choices such as Oracle and SQL Server; changing the selected profile changes generated output without requiring an application restart. For the active SQL Server package, Oracle response files, Oracle media checks, OPatch, DBCA, NetCA, listener setup, and Oracle credentials are omitted.
+
+## Publication
+
+Successful builds publish to the mock provider-aware repository path:
 
 ```text
-C:\WindchillFoundationPOC\Builds\<build-folder>
+C:\WindchillFoundationPOC\MockYDrive\Foundations\wc-13.1.2\0.1.0\virtualbox\sqlserver
 ```
 
-On success, the `.box` file is created in that build folder. See [Box usage and SSH](docs/03-box-usage-and-ssh.md) for adding the box to Vagrant and connecting to it.
+Published files include the `.box`, SHA-256, `foundation-manifest.json`, `validation-report.json`, `validation-report.txt`, and `build.log`.
 
-## Runtime workspace
-
-The default Windows runtime root is:
-
-```text
-C:\WindchillFoundationPOC
-```
-
-The generated package creates these runtime directories as needed:
-
-| Directory | Purpose |
-| --- | --- |
-| `Media\Oracle` | Administrator-provided Oracle installer ZIP. |
-| `Cache` | Future cache location for reusable downloads. |
-| `Builds` | Per-run Vagrant/VirtualBox build directories and build logs. |
-| `Output` | Future output staging location. |
-| `MockYDrive` | Placeholder for a future shared repository layout. |
-
-The current launcher packages the box in the per-run build directory and prints next-step guidance. It does not publish active VMs directly from the mock shared repository.
-
-## Project formatting standards
-
-The repository includes `.editorconfig` plus `.gitattributes` so editors and Git agree on readable formatting: JSON and Markdown use two-space indentation with LF endings, PowerShell scripts use two-space indentation with CRLF endings for Windows-friendly editing, and Linux shell scripts always use LF endings for Vagrant provisioning. Keep profile and schema JSON pretty-printed rather than minified so reviewers can audit version and infrastructure changes easily.
-
-## Support status
-
-This is a proof of concept, not a PTC certification statement. The profile declares `POC_NOT_CERTIFIED`, and the documentation intentionally distinguishes compatibility targeting from certified Windchill support. See [Profiles and new Windchill versions](docs/04-profiles-and-new-windchill-versions.md) before creating additional profiles.
+See `docs/` for detailed procedures, security notes, troubleshooting, profiles, SSH usage, and provider architecture.
