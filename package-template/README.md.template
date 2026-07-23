@@ -1,0 +1,40 @@
+# Generated Windchill Foundation Admin Build Package
+
+This generated package targets the `SQLSERVER` database provider: AlmaLinux 9, Amazon Corretto Java from the selected profile, and Microsoft SQL Server 2022 Developer Edition installed from Microsoft's Linux package repositories.
+
+## Start here
+
+Use this file as the entry point inside the generated package. The source repository has longer chapters under `docs/`; this generated package intentionally includes the runnable commands and recovery steps needed by the Admin build operator.
+
+## Prerequisites on the Windows build host
+
+Install PowerShell 7.x, Vagrant, and Oracle VirtualBox 7.x. Vagrant and VirtualBox are separate installs; `vagrant --version` can succeed while `VBoxManage` is still missing. Verify with:
+
+```powershell
+pwsh --version
+vagrant --version
+VBoxManage --version
+```
+
+If `VBoxManage` is not on `PATH`, the prerequisite checker also looks for `C:\Program Files\Oracle\VirtualBox\VBoxManage.exe`.
+
+## Quick start
+
+1. Copy `secrets.example.json` to `secrets.json`.
+2. Populate `database.sqlServer.saPassword` with a strong SQL Server SA password: at least 12 characters with uppercase, lowercase, number, and symbol characters.
+3. Run `pwsh .\Start-Foundation-Build.ps1`.
+4. If the build fails after a VM has been created, correct the issue and run the resume command printed in the error output: `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'`.
+5. If the VM should be discarded, run the cleanup command printed in the error output: `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'`.
+
+## Command reference
+
+| Task | Command |
+| --- | --- |
+| Start build | `pwsh .\Start-Foundation-Build.ps1` |
+| Resume failed build | `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` |
+| Clean/destroy failed build VM | `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` |
+| Check host prerequisites | `pwsh .\Test-Prerequisites.ps1 -ConfigPath .\config.json` |
+
+`Clean-Foundation-Build.ps1` is the supported cleanup path because it runs Vagrant cleanup before removing the build directory. Do not rely on deleting files alone when VirtualBox still has a registered VM.
+
+Oracle media is not required for this SQL Server package. The Oracle provider is disabled for the current POC because it requires approved Oracle 19c RU and organization-provided patch media.
