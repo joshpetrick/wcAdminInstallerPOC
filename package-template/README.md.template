@@ -1,0 +1,13 @@
+# Generated Windchill Foundation Admin Build Package
+
+This generated package targets the `SQLSERVER` database provider: AlmaLinux 9, Amazon Corretto Java from the selected profile, and Microsoft SQL Server 2022 Developer Edition installed from Microsoft's Linux package repositories.
+
+## Quick start
+
+1. Copy `secrets.example.json` to `secrets.json`.
+2. Populate `database.sqlServer.saPassword` with a strong SQL Server SA password.
+3. Run `pwsh .\Start-Foundation-Build.ps1`.
+4. Use `pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` after correcting transient failures.
+5. Use `pwsh .\Clean-Foundation-Build.ps1 -BuildDirectory '<build-dir>'` to destroy a failed build VM.
+
+Oracle media is not required for this SQL Server package. The Oracle provider is disabled for the current POC because it requires approved Oracle 19c RU and organization-provided patch media.
