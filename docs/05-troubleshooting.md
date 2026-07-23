@@ -171,3 +171,32 @@ Correct the root cause, then resume if the VM is still healthy. If SQL Server se
 ## Oracle media errors
 
 The active SQL Server package should not check for Oracle media. If a generated SQL Server package asks for `LINUX.X64_193000_db_home.zip`, regenerate from `profiles/windchill-13.1.2-sqlserver.json` and confirm the generated package name contains `sqlserver`.
+
+## Stage 05 fails with `SQL Server Agent expected true found <empty>`
+
+Meaning: SQL Server is running, but validation could not read the Linux SQL Server Agent setting from `mssql-conf`. Some package versions print `mssql-conf get sqlagent.enabled` differently than expected, while the effective setting is stored under `[sqlagent]` in `/var/opt/mssql/mssql.conf`.
+
+What to do from the build directory:
+
+```powershell
+vagrant ssh
+sudo /opt/mssql/bin/mssql-conf get sqlagent.enabled
+sudo sed -n '/^\[sqlagent\]/,/^\[/p' /var/opt/mssql/mssql.conf
+sudo systemctl status mssql-server --no-pager
+```
+
+If `/var/opt/mssql/mssql.conf` shows `enabled = true`, regenerate the Admin package from this repository and resume the build so stage 05 uses the fallback parser:
+
+```powershell
+pwsh .\Resume-Foundation-Build.ps1 -BuildDirectory '<build-dir>'
+```
+
+If the value is missing or false, rerun stage 04 by cleaning and rebuilding, or set it manually for diagnosis only:
+
+```powershell
+vagrant ssh
+sudo /opt/mssql/bin/mssql-conf set sqlagent.enabled true
+sudo systemctl restart mssql-server
+```
+
+Then resume the generated package. The production POC path should configure this automatically; manual changes are only for investigating a partially built VM.

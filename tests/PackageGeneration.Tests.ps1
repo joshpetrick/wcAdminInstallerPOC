@@ -34,6 +34,9 @@ Describe 'SQL Server provider package generation' {
     $configure | Should -Not -Match '(^|[^A-Z_])SA_PASSWORD='
     $validate | Should -Match "SERVERPROPERTY\('ProductVersion'\)"
     $validate | Should -Match 'FoundationValidation'
+    $validate | Should -Match 'read_mssql_conf_bool'
+    $validate | Should -Match '/var/opt/mssql/mssql.conf'
+    $validate | Should -Match 'SQL Server Agent expected true'
   }
 
   It 'active SQL Server scripts contain no Oracle installer commands' {
